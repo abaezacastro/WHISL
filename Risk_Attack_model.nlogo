@@ -1,7 +1,7 @@
 extensions [table]
 Globals [
-  A                        ; Area for wildlife weighted by quality and domain
-  table_landQ              ; table from the white board
+  A                        ; Area for wildlife, weighted by quality and domain
+  table_landQ              ; table cost-quality
   i                        ; counter
   cost_Y                   ; Cost of production (the same for all sites)
   new_ff                   ; auxiliar variable to define new farmers (used in setup the houses)
@@ -13,7 +13,7 @@ Globals [
   alpha                    ;Dynamic Subjective Risk Beliefs parameter
   beta                     ;Dynamic Subjective Risk Beliefs parameter
   delta                    ;Dynamic Subjective Risk Beliefs parameter
-
+  s
 ;;reporters
 tot_cost_production
 tot_damage
@@ -60,7 +60,7 @@ to setup
   quality_landscape        ;define quality of land
   set cost_Y 0.5             ;need to be parametrized
   set counter 0
-  set delta 1
+  set delta 1.5
   ask patches [
     set Domain 1
     set Quality 1
@@ -101,7 +101,7 @@ to house_location
     set new_ff one-of patches in-radius distance-btw-households with [not any? farmers-here]
     ]
   create-farmers 1 [
-    ; here we can assign the location based on land productivity and density
+    ; here we assign the location based on land productivity and density
 
     move-to new_ff
 
@@ -116,56 +116,6 @@ to house_location
     if i = Number-of-Farmers [stop]
   ]
 end
-
-to landscape_visualization
-
-  if color_Landscape = "Quality Agro" [
-    let max_YQ max [Yield_Q] of patches
-    ask patches [
-      set pcolor scale-color green Yield_Q 0 max_YQ
-    ]
-  ]
-  if color_Landscape = "Attacks" [
-    ask patches with [landtype = "F"][
-      set pcolor 55
-      if N_attacks_here = 1 [set pcolor 15]
-    ]
-    ask patches with   [landtype = "A"][
-      set pcolor 5
-      if N_attacks_here = 1 [set pcolor 15]
-    ]
-  ]
-  if color_Landscape = "Fenced patches" [
-    ask patches with [Domain < 1][
-      set pcolor scale-color blue Domain 1 0
-    ]
-    ask patches with [Domain = 1 and landtype = "F"][
-      set pcolor 55
-    ]
-    ask patches with [Domain = 1 and landtype = "A"][
-      set pcolor 5
-    ]
-  ]
-  if color_Landscape = "objective probability of occupancy" and ticks > 1[
-    let max_pooc max [p_occ] of patches
-    ask patches with [landtype = "A"][
-      set pcolor scale-color red p_occ 0 max_pooc
-    ]
-    ask patches with [landtype = "F"][
-      set pcolor 55
-    ]
-  ]
-  if color_Landscape = "farms" [
-    ask patches with [farmer_owner > 0][
-      set pcolor farmer_owner
-    ]
-    ask patches with [farmer_owner = 0][
-      set pcolor 55
-    ]
-  ]
-
-end
-
 
 
 to define_farms ;total area that is available to a farmer for production
@@ -340,11 +290,19 @@ ask patches with [domain < 1] [
 ]
 end
 
+;##################################################################################################################################################
+;##################################################################################################################################################
 
 to subjective_risk
   ask farmers [
-    let tt (list (delta ^ (5 - 1)) (delta ^ (5 - 2))  (delta ^ (5 - 3))  (delta ^ (5 - 4))  (delta ^ (5 - 5)))
-    let s sum (map * tt attacks_list)
+    let tt map [delta ^ (5 - ?)][1 2 3 4 5]
+
+    if-else social-influence = TRUE [
+      let attacks_neigh ifelse-value (any? my-links) [map [ round mean [item ? attacks_list] of farmers with [link-neighbor? myself = TRUE]][0 1 2 3 4]][(list 0 0 0 0 0)]
+      set s sum (map * tt attacks_neigh)
+    ][
+      set s sum (map * tt attacks_list)
+    ]
     let w_t []
     (foreach attacks_list tt
       [
@@ -354,8 +312,8 @@ to subjective_risk
 
   ]
 end
-
-
+;##################################################################################################################################################
+;##################################################################################################################################################
 to setup-spatially-clustered-network
   let num-links (average-node-degree * Number-of-Farmers) / 2
   while [count links < num-links ]
@@ -366,8 +324,59 @@ to setup-spatially-clustered-network
       if choice != nobody [ create-link-with choice ]
     ]
   ]
+end
+;##################################################################################################################################################
+;##################################################################################################################################################
+to landscape_visualization
+  if color_Landscape = "Quality Agro" [
+    let max_YQ max [Yield_Q] of patches
+    ask patches [
+      set pcolor scale-color green Yield_Q 0 max_YQ
+    ]
+  ]
+  if color_Landscape = "Attacks" [
+    ask patches with [landtype = "F"][
+      set pcolor 55
+      if N_attacks_here = 1 [set pcolor 15]
+    ]
+    ask patches with   [landtype = "A"][
+      set pcolor 5
+      if N_attacks_here = 1 [set pcolor 15]
+    ]
+  ]
+  if color_Landscape = "Fenced patches" [
+    ask patches with [Domain < 1][
+      set pcolor scale-color blue Domain 1 0
+    ]
+    ask patches with [Domain = 1 and landtype = "F"][
+      set pcolor 55
+    ]
+    ask patches with [Domain = 1 and landtype = "A"][
+      set pcolor 5
+    ]
+  ]
+  if color_Landscape = "objective probability of occupancy" and ticks > 1[
+    let max_pooc max [p_occ] of patches
+    ask patches with [landtype = "A"][
+      set pcolor scale-color red p_occ 0 max_pooc
+    ]
+    ask patches with [landtype = "F"][
+      set pcolor 55
+    ]
+  ]
+  if color_Landscape = "farms" [
+    ask patches with [farmer_owner > 0][
+      set pcolor farmer_owner
+    ]
+    ask patches with [farmer_owner = 0][
+      set pcolor 55
+    ]
+  ]
 
 end
+;##################################################################################################################################################
+;##################################################################################################################################################
+;##################################################################################################################################################
 @#$#@#$#@
 GRAPHICS-WINDOW
 273
@@ -439,7 +448,7 @@ N
 N
 10
 1000
-508
+748
 1
 1
 Animals
@@ -454,7 +463,7 @@ price
 price
 0
 10
-0.5
+2.4
 0.1
 1
 NIL
@@ -469,7 +478,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 500
-86
+178
 1
 1
 farmers
@@ -494,7 +503,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-43
+12
 1
 1
 NIL
@@ -526,7 +535,7 @@ labor_fencing
 labor_fencing
 0
 2
-0.6
+0.3
 0.1
 1
 NIL
@@ -559,7 +568,7 @@ damage
 damage
 0
 1
-0.86
+0.2
 0.01
 1
 NIL
@@ -574,7 +583,7 @@ farm-size
 farm-size
 0
 40
-38
+32
 1
 1
 NIL
@@ -625,7 +634,7 @@ average-node-degree
 average-node-degree
 0
 10
-2
+7
 1
 1
 NIL
@@ -641,9 +650,38 @@ TEXTBOX
 0.0
 1
 
+SWITCH
+140
+474
+280
+507
+social-influence
+social-influence
+0
+1
+-1000
+
+PLOT
+978
+185
+1178
+335
+plot 1
+NIL
+NIL
+0.0
+100.0
+0.0
+100.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "plot count patches with [domain < 1]"
+
 @#$#@#$#@
 ## WHAT IS IT?
-This model simualtes a group for farmers and their farmland where they produce crops. This production is reduced when they suffer attacks from a wildlife population that inhabit the landscape. Farmers can reduce the risk of being expose to these attacks by acting in the landscape, such that the suitability of patches for wildlife is reduced. We called this "fencing". Farmers must decide whether or not to invest time in creating and maintaining a fences troghout the farm, by calculating an expected utility they would obtain with and without fencing. The expectation of economic return depends on the labor invested and on their subjective perception that an attack may occur in their property. This subjective probability depends on past attacks suffered by the farmers, but also on the social network in which the farmers are embedded. By comparing the expected utility of this different actions in each patch of their farm land they decide what patches to farm and what actions to take each year.
+This model simulates a group for farmers and their farmland where they produce crops. This production is reduced when they suffer attacks from a wildlife population that inhabit the landscape. Farmers can reduce the risk of being expose to these attacks by acting in the landscape, such that the suitability of patches for wildlife is reduced. We called this "fencing". Farmers must decide whether or not to invest time in creating and maintaining a fences troghout the farm, by calculating an expected utility they would obtain with and without fencing. The expectation of economic return depends on the labor invested and on their subjective perception that an attack may occur in their property. This subjective probability depends on past attacks suffered by the farmers, but also on the social network in which the farmers are embedded. By comparing the expected utility of this different actions in each patch of their farm land they decide what patches to farm and what actions to take each year.
 ## HOW IT WORKS
 
 (what rules the agents use to create the overall behavior of the model)
@@ -986,6 +1024,44 @@ NetLogo 5.2.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="experiment1" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="100"/>
+    <metric>sum [domain] of patches</metric>
+    <metric>mean [income] of farmers</metric>
+    <metric>sum [count_total_attacks] of farmers</metric>
+    <metric>N / A</metric>
+    <enumeratedValueSet variable="farm-size">
+      <value value="32"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="distance-btw-households">
+      <value value="10"/>
+      <value value="45"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="price">
+      <value value="2.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Number-of-Farmers">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="average-node-degree">
+      <value value="7"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="social-influence">
+      <value value="false"/>
+      <value value="true"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="damage" first="0.1" step="0.01" last="0.4"/>
+    <enumeratedValueSet variable="labor_fencing">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="N">
+      <value value="700"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
