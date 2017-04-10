@@ -1,0 +1,53 @@
+---
+title: "carinivore-attack-social-risk-perpection"
+author: "Andres Baeza"
+date: "April 6, 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+require(ggplot2)
+```
+
+```{r, echo=FALSE}
+#read function for multiplot
+source("C:/Users/abaezaca/Documents/MEGADAPT/ABM_V2/multiplot_function.R")
+R1<-data.frame(read.csv(file="C:/Users/abaezaca/Documents/Carnivore_coexistance/simulation_results/Risk_Attack_model experiment1-table.csv",header = TRUE,skip = 6,comment.char ="#"))
+
+si=ggplot(R1,aes(x=damage,y=sum..domain..of.patches,colour = social.influence))+
+  geom_point()+
+   labs(x = "damage per attack", y="Area available for wildlife",colour ="Social influence?")+
+  scale_colour_hue(labels=c("false","true"),guide = 'none')+
+theme(text = element_text(size=12))+
+    geom_smooth()
+
+a=ggplot(R1,aes(x=damage,y=sum..count_total_attacks..of.farmers,colour = social.influence))+
+  geom_point()+
+   labs(x = "damage per attack", y="total number of attacks",colour ="Social influence?")+
+  scale_colour_hue(labels=c("false","true"),guide = 'none')+
+theme(text = element_text(size=12))+
+    geom_smooth()
+
+
+I=ggplot(R1,aes(x=damage,y=mean..income..of.farmers,colour = social.influence))+
+  geom_point()+
+   labs(x = "damage per attack", y="mean income",colour ="Social influence?")+
+  scale_colour_hue(labels=c("false","true"),guide = 'none')+
+theme(text = element_text(size=12))+
+    geom_smooth()
+
+#+
+#  annotate("text",x=0.1,y=19.5,label="a", size=8)
+##Efect of environmental forces
+
+multiplot(si,I,a,cols=3)
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
