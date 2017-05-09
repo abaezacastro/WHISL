@@ -54,7 +54,7 @@ patches-own [
   farmer_owner             ; To define the farmer owner of the site
 ]
 
-to setup
+to SETUP
   clear-all
   reset-ticks
   quality_landscape        ;define quality of land
@@ -63,7 +63,6 @@ to setup
   set delta 1.5
   ask patches [
     set Domain 1
-    set Quality 1
     set Landtype "F"
     set decision_fencing "NF"
     set farmer_owner 0
@@ -79,14 +78,16 @@ end
 to quality_landscape        ;here we define the quality of the patch for agriculture
       ask patches [
         set Yield_Q 1 + random pxcor
+        set Quality (max-pxcor - pxcor) / max-pxcor
         set labor_AGRO 1
       ]
 end
-
-to house_location
+;###################################################################################################
+;###################################################################################################
+to house_location ;; houses allocated in areas with higher agro quality
   create-farmers round (Number-of-Farmers * 0.1) [
     ; here we can assign the location based on land productivity and density
-    move-to one-of patches with [not any? farmers-here]
+    move-to one-of max-n-of 10 (patches with [not any? farmers-here]) [Yield_Q]
     set shape "house"
     set size 2
     set Tot_Labor 20 ;;so, to make things simple if a household invest all its labor it will produce all potential crop, assuming not attacks and therefore not fences needed
@@ -116,8 +117,8 @@ to house_location
     if i = Number-of-Farmers [stop]
   ]
 end
-
-
+;###################################################################################################
+;###################################################################################################
 to define_farms ;total area that is available to a farmer for production
   set i 0
 
@@ -321,7 +322,9 @@ to setup-spatially-clustered-network
     ask one-of farmers
     [
       let choice (min-one-of (other farmers with [not link-neighbor? myself])[distance myself])
-      if choice != nobody [ create-link-with choice ]
+      if choice != nobody [ create-link-with choice [
+          set thickness 0.5
+          set color magenta] ]
     ]
   ]
 end
@@ -332,6 +335,12 @@ to landscape_visualization
     let max_YQ max [Yield_Q] of patches
     ask patches [
       set pcolor scale-color green Yield_Q 0 max_YQ
+    ]
+  ]
+  if color_Landscape ="Quality wildlife"[
+    let max_Q max [quality] of patches
+    ask patches [
+      set pcolor scale-color green quality 0 max_Q
     ]
   ]
   if color_Landscape = "Attacks" [
@@ -357,12 +366,12 @@ to landscape_visualization
   ]
   if color_Landscape = "objective probability of occupancy" and ticks > 1[
     let max_pooc max [p_occ] of patches
-    ask patches with [landtype = "A"][
+    ask patches[
       set pcolor scale-color red p_occ 0 max_pooc
     ]
-    ask patches with [landtype = "F"][
-      set pcolor 55
-    ]
+    ;ask patches with [landtype = "F"][
+     ; set pcolor 55
+    ;]
   ]
   if color_Landscape = "farms" [
     ask patches with [farmer_owner > 0][
@@ -381,11 +390,11 @@ end
 GRAPHICS-WINDOW
 273
 39
-701
-488
+788
+575
 -1
 -1
-4.14
+5.0
 1
 10
 1
@@ -393,7 +402,7 @@ GRAPHICS-WINDOW
 1
 0
 0
-0
+1
 1
 0
 100
@@ -448,7 +457,7 @@ N
 N
 10
 1000
-748
+193
 1
 1
 Animals
@@ -462,9 +471,9 @@ SLIDER
 price
 price
 0
-10
-2.4
-0.1
+2
+1.07
+0.01
 1
 NIL
 HORIZONTAL
@@ -478,21 +487,21 @@ Number-of-Farmers
 Number-of-Farmers
 1
 500
-178
+112
 1
 1
 farmers
 HORIZONTAL
 
 CHOOSER
-377
-489
-615
-534
+8
+162
+246
+207
 Color_Landscape
 Color_Landscape
-"Quality Agro" "Attacks" "Fenced patches" "objective probability of occupancy" "farms"
-2
+"Quality Agro" "Quality wildlife" "Attacks" "Fenced patches" "objective probability of occupancy" "farms"
+3
 
 SLIDER
 13
@@ -503,7 +512,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-12
+78
 1
 1
 NIL
@@ -542,10 +551,10 @@ NIL
 HORIZONTAL
 
 PLOT
-711
-196
-958
-346
+785
+206
+1032
+356
 Income
 NIL
 NIL
@@ -568,7 +577,7 @@ damage
 damage
 0
 1
-0.2
+0.5
 0.01
 1
 NIL
@@ -583,17 +592,17 @@ farm-size
 farm-size
 0
 40
-32
+31
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-712
-40
-959
-190
+786
+49
+1033
+199
 total # of attacks
 NIL
 NIL
@@ -608,10 +617,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot sum [count_total_attacks] of farmers"
 
 PLOT
-711
-350
-958
-500
+785
+359
+1032
+509
 average p_occ
 NIL
 NIL
@@ -634,17 +643,17 @@ average-node-degree
 average-node-degree
 0
 10
-7
+2
 1
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-270
-544
-1022
-840
+344
+554
+1096
+850
 \"Quality Agro\": Tones of green to represent the quality the patch for agriculture. Ligher tones for more productive patches\n\n\"Attacks\": To show the attacks that occur in the patches with agriculture production\n\n\"Fenced patches\": To  show the state of a fence using blue tones. Darker for newer fence (that is D=~0). Lighter tones represent older or not fence at all (D=1).\n\n\"Objective probability of occupancy\": To show the true probability of an attack. darker tones for higher probability.\n\n\"Farms\": Each color represents the sites that belong to a farmer. \n\nGreen patches represent the area not occupied by farmers (Forest land)
 14
 0.0
@@ -662,10 +671,10 @@ social-influence
 -1000
 
 PLOT
-978
-185
-1178
-335
+1053
+195
+1253
+345
 plot 1
 NIL
 NIL
@@ -1025,7 +1034,7 @@ NetLogo 5.2.1
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="experiment1" repetitions="1" runMetricsEveryStep="false">
+  <experiment name="experiment1" repetitions="10" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="100"/>
@@ -1037,8 +1046,7 @@ NetLogo 5.2.1
       <value value="32"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="distance-btw-households">
-      <value value="10"/>
-      <value value="45"/>
+      <value value="20"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="price">
       <value value="2.5"/>
@@ -1053,9 +1061,43 @@ NetLogo 5.2.1
       <value value="false"/>
       <value value="true"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="damage" first="0.1" step="0.01" last="0.4"/>
+    <steppedValueSet variable="damage" first="0.1" step="0.05" last="0.4"/>
     <enumeratedValueSet variable="labor_fencing">
       <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="N">
+      <value value="700"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="experiment2" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="100"/>
+    <metric>sum [domain] of patches</metric>
+    <metric>mean [income] of farmers</metric>
+    <metric>sum [count_total_attacks] of farmers</metric>
+    <metric>N / A</metric>
+    <enumeratedValueSet variable="farm-size">
+      <value value="32"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="distance-btw-households">
+      <value value="20"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="price">
+      <value value="2.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Number-of-Farmers">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="average-node-degree" first="1" step="1" last="10"/>
+    <enumeratedValueSet variable="social-influence">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="damage">
+      <value value="0.4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="labor_fencing">
+      <value value="0.3"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="N">
       <value value="700"/>
