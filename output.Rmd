@@ -14,11 +14,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 require(ggplot2)
 ```
-
-```{r, echo=FALSE}
+###Effect of social influence for different cost of attacks (damage)
+```{r, echo=FALSE,fig.width=18,fig.height=4}
 #read function for multiplot
 source("C:/Users/abaezaca/Documents/MEGADAPT/ABM_V2/multiplot_function.R")
-R1<-data.frame(read.csv(file="C:/Users/abaezaca/Documents/Carnivore_coexistance/simulation_results/Risk_Attack_model experiment1-table.csv",header = TRUE,skip = 6,comment.char ="#"))
+
+R1<-data.frame(read.csv(file="C:/Users/abaezaca/Documents/Carnivore_coexistance/simulation_results/Risk_Attack_model vary_demage-table.csv",header = TRUE,skip = 6,comment.char ="#"))
 
 si=ggplot(R1,aes(x=damage,y=sum..domain..of.patches,colour = social.influence))+
   geom_point()+
@@ -32,7 +33,7 @@ a=ggplot(R1,aes(x=damage,y=sum..count_total_attacks..of.farmers,colour = social.
    labs(x = "damage per attack", y="total number of attacks",colour ="Social influence?")+
   scale_colour_hue(labels=c("false","true"),guide = 'none')+
 theme(text = element_text(size=12))+
-    geom_smooth()
+    geom_smooth()+scale_color_discrete()
 
 
 I=ggplot(R1,aes(x=damage,y=mean..income..of.farmers,colour = social.influence))+
@@ -50,4 +51,70 @@ multiplot(si,I,a,cols=3)
 
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+###Effect of the number of social connections (number of links per farmer)
+```{r, echo=FALSE,fig.width=18,fig.height=4}
+#read function for multiplot
+source("C:/Users/abaezaca/Documents/MEGADAPT/ABM_V2/multiplot_function.R")
+
+R2<-data.frame(read.csv(file="C:/Users/abaezaca/Documents/Carnivore_coexistance/simulation_results/Risk_Attack_model vary_Nlinks-table.csv",header = TRUE,skip = 6,comment.char ="#"))
+
+si=ggplot(R2,aes(x=average.node.degree,y=sum..domain..of.patches))+  geom_point()+
+   labs(x = "Number of neighboors", y="Area available for wildlife")+
+theme(text = element_text(size=12))+
+    geom_smooth()
+
+a=ggplot(R2,aes(x=average.node.degree,y=sum..count_total_attacks..of.farmers))+
+  geom_point()+
+   labs(x = "Number of neighboors", y="total number of attacks")+
+theme(text = element_text(size=12))+
+    geom_smooth()
+
+
+I=ggplot(R2,aes(x=average.node.degree,y=mean..income..of.farmers))+
+  geom_point()+
+   labs(x = "Number of neighboors", y="mean income")+
+ theme(text = element_text(size=12))+
+    geom_smooth()
+
+#+
+#  annotate("text",x=0.1,y=19.5,label="a", size=8)
+##Efect of environmental forces
+
+multiplot(si,I,a,cols=3)
+
+```
+
+
+
+###Effect of distance between farmers 
+```{r, echo=FALSE,fig.width=18,fig.height=4}
+#read function for multiplot
+source("C:/Users/abaezaca/Documents/MEGADAPT/ABM_V2/multiplot_function.R")
+
+R3<-data.frame(read.csv(file="C:/Users/abaezaca/Documents/Carnivore_coexistance/simulation_results/Risk_Attack_model vary_distance_btw_farmers-table.csv",header = TRUE,skip = 6,comment.char ="#"))
+
+si=ggplot(R3,aes(x=distance.btw.households,y=sum..domain..of.patches))+  geom_point()+
+   labs(x = "Distance between farmers", y="Area available for wildlife")+
+theme(text = element_text(size=12))+
+    geom_smooth()
+
+a=ggplot(R3,aes(x=distance.btw.households,y=sum..count_total_attacks..of.farmers))+
+  geom_point()+
+   labs(x = "Distance between farmers", y="total number of attacks")+
+theme(text = element_text(size=12))+
+    geom_smooth()
+
+
+I=ggplot(R3,aes(x=distance.btw.households,y=mean..income..of.farmers))+
+  geom_point()+
+   labs(x = "Distance between farmers", y="mean income")+
+ theme(text = element_text(size=12))+
+    geom_smooth()
+
+#+
+#  annotate("text",x=0.1,y=19.5,label="a", size=8)
+##Efect of environmental forces
+
+multiplot(si,I,a,cols=3)
+
+```
