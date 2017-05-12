@@ -35,6 +35,8 @@ farmers-own [
   attacks_list             ;list to save past attacks for adjusting subjective risk
   count_total_attacks      ;;total number of attacks in a year
   subjective-Risk
+  my_firstD_neigh
+  my_secondD_neigh
 ]
 
 patches-own [
@@ -299,7 +301,8 @@ to subjective_risk
     let tt map [delta ^ (5 - ?)][1 2 3 4 5]
 
     if-else social-influence = TRUE [
-      let attacks_neigh ifelse-value (any? my-links) [map [ round mean [item ? attacks_list] of farmers with [link-neighbor? myself = TRUE]][0 1 2 3 4]][(list 0 0 0 0 0)]
+   let attacks_neigh ifelse-value (any? my-links) [map [ round mean [item ? attacks_list] of farmers with [link-neighbor? myself = TRUE]][0 1 2 3 4]][(list 0 0 0 0 0)]
+;      let attacks_neigh ifelse-value (any? my-links) [ MAP [0.25 * ?1 + ?2] [map [round mean [item ? attacks_list] of my_FIRSTD_neigh]][0 1 2 3 4][(map [ round mean [item ? attacks_list] of my_FIRSTD_neigh][0 1 2 3 4])]][(list 0 0 0 0 0)]
       set s sum (map * tt attacks_neigh)
     ][
       set s sum (map * tt attacks_list)
@@ -311,6 +314,9 @@ to subjective_risk
       ])
     set subjective-risk (s + mean [p_occ] of farm) / (sum w_t)
 
+  PRINT [WHO] OF my_secondD_neigh
+
+ PRINT [WHO] OF my_FIRSTD_neigh
   ]
 end
 ;##################################################################################################################################################
@@ -327,6 +333,10 @@ to setup-spatially-clustered-network
           set color magenta] ]
     ]
   ]
+
+  ask farmers [set my_firstD_neigh turtle-set [other-end] of my-links
+      set my_secondD_neigh turtle-set [[other-end] of my-links] of my_firstD_neigh
+    ]
 end
 ;##################################################################################################################################################
 ;##################################################################################################################################################
@@ -457,7 +467,7 @@ N
 N
 10
 1000
-193
+105
 1
 1
 Animals
@@ -487,7 +497,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 500
-112
+45
 1
 1
 farmers
@@ -512,7 +522,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-78
+42
 1
 1
 NIL
@@ -592,7 +602,7 @@ farm-size
 farm-size
 0
 40
-31
+39
 1
 1
 NIL
@@ -643,7 +653,7 @@ average-node-degree
 average-node-degree
 0
 10
-2
+3
 1
 1
 NIL
