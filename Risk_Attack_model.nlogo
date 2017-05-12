@@ -79,8 +79,8 @@ end
 
 to quality_landscape        ;here we define the quality of the patch for agriculture
       ask patches [
-        set Yield_Q 1 + random pxcor
-        set Quality (max-pxcor - pxcor) / max-pxcor
+        set Yield_Q random 10 ;1 + random pxcor
+        set Quality  random-float 1;(max-pxcor - pxcor) / max-pxcor
         set labor_AGRO 1
       ]
 end
@@ -301,9 +301,14 @@ to subjective_risk
     let tt map [delta ^ (5 - ?)][1 2 3 4 5]
 
     if-else social-influence = TRUE [
-   let attacks_neigh ifelse-value (any? my-links) [map [ round mean [item ? attacks_list] of farmers with [link-neighbor? myself = TRUE]][0 1 2 3 4]][(list 0 0 0 0 0)]
-;      let attacks_neigh ifelse-value (any? my-links) [ MAP [0.25 * ?1 + ?2] [map [round mean [item ? attacks_list] of my_FIRSTD_neigh]][0 1 2 3 4][(map [ round mean [item ? attacks_list] of my_FIRSTD_neigh][0 1 2 3 4])]][(list 0 0 0 0 0)]
+      ;let attacks_neigh ifelse-value (any? my-links) [map [ round mean [item ? attacks_list] of farmers with [link-neighbor? myself = TRUE]][0 1 2 3 4]][(list 0 0 0 0 0)]
+
+      let fdf map [sum [item ? attacks_list] of my_FIRSTD_neigh][0 1 2 3 4]
+      let sdn (map [sum [item ? attacks_list] of my_secondD_neigh][0 1 2 3 4])
+
+      let attacks_neigh (map [?1 + (0.25 * ?2) + ?3] fdf sdn attacks_list)
       set s sum (map * tt attacks_neigh)
+
     ][
       set s sum (map * tt attacks_list)
     ]
@@ -314,14 +319,14 @@ to subjective_risk
       ])
     set subjective-risk (s + mean [p_occ] of farm) / (sum w_t)
 
-  PRINT [WHO] OF my_secondD_neigh
+  ;PRINT [WHO] OF my_secondD_neigh
 
- PRINT [WHO] OF my_FIRSTD_neigh
+ ;PRINT [WHO] OF my_FIRSTD_neigh
   ]
 end
 ;##################################################################################################################################################
 ;##################################################################################################################################################
-to setup-spatially-clustered-network
+to setup-spatially-clustered-network                                       ;to create a network of farmers
   let num-links (average-node-degree * Number-of-Farmers) / 2
   while [count links < num-links ]
   [
@@ -334,9 +339,11 @@ to setup-spatially-clustered-network
     ]
   ]
 
-  ask farmers [set my_firstD_neigh turtle-set [other-end] of my-links
-      set my_secondD_neigh turtle-set [[other-end] of my-links] of my_firstD_neigh
-    ]
+  ask farmers [
+    set my_firstD_neigh turtle-set [other-end] of my-links                           ;to define the set agentthe first order neighbors of farmers
+    set my_secondD_neigh turtle-set [[other-end] of my-links] of my_firstD_neigh     ;to define the agentset the second order neighbors of farmers (friends of my friends)
+    set my_secondD_neigh my_secondD_neigh with [who != [who] of myself]              ;remove the calling farmers from the second degree links
+  ]
 end
 ;##################################################################################################################################################
 ;##################################################################################################################################################
@@ -467,7 +474,7 @@ N
 N
 10
 1000
-105
+50
 1
 1
 Animals
@@ -482,7 +489,7 @@ price
 price
 0
 2
-1.07
+1.5
 0.01
 1
 NIL
@@ -497,7 +504,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 500
-45
+100
 1
 1
 farmers
@@ -522,7 +529,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-42
+20
 1
 1
 NIL
@@ -554,7 +561,7 @@ labor_fencing
 labor_fencing
 0
 2
-0.3
+0.5
 0.1
 1
 NIL
@@ -587,7 +594,7 @@ damage
 damage
 0
 1
-0.5
+0.29
 0.01
 1
 NIL
@@ -602,7 +609,7 @@ farm-size
 farm-size
 0
 40
-39
+32
 1
 1
 NIL
@@ -653,17 +660,17 @@ average-node-degree
 average-node-degree
 0
 10
-3
+4
 1
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-344
-554
-1096
-850
+861
+545
+1613
+841
 \"Quality Agro\": Tones of green to represent the quality the patch for agriculture. Ligher tones for more productive patches\n\n\"Attacks\": To show the attacks that occur in the patches with agriculture production\n\n\"Fenced patches\": To  show the state of a fence using blue tones. Darker for newer fence (that is D=~0). Lighter tones represent older or not fence at all (D=1).\n\n\"Objective probability of occupancy\": To show the true probability of an attack. darker tones for higher probability.\n\n\"Farms\": Each color represents the sites that belong to a farmer. \n\nGreen patches represent the area not occupied by farmers (Forest land)
 14
 0.0
@@ -1044,7 +1051,7 @@ NetLogo 5.2.1
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="experiment1" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="vary_demage" repetitions="10" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="100"/>
@@ -1065,21 +1072,21 @@ NetLogo 5.2.1
       <value value="100"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="average-node-degree">
-      <value value="7"/>
+      <value value="4"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="social-influence">
       <value value="false"/>
       <value value="true"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="damage" first="0.1" step="0.05" last="0.4"/>
+    <steppedValueSet variable="damage" first="0.05" step="0.05" last="0.8"/>
     <enumeratedValueSet variable="labor_fencing">
       <value value="0.5"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="N">
-      <value value="700"/>
+      <value value="50"/>
     </enumeratedValueSet>
   </experiment>
-  <experiment name="experiment2" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="vary_Nlinks" repetitions="10" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="100"/>
@@ -1099,7 +1106,7 @@ NetLogo 5.2.1
     <enumeratedValueSet variable="Number-of-Farmers">
       <value value="100"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="average-node-degree" first="1" step="1" last="10"/>
+    <steppedValueSet variable="average-node-degree" first="2" step="1" last="7"/>
     <enumeratedValueSet variable="social-influence">
       <value value="true"/>
     </enumeratedValueSet>
@@ -1110,7 +1117,41 @@ NetLogo 5.2.1
       <value value="0.3"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="N">
-      <value value="700"/>
+      <value value="50"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="vary_distance_btw_farmers" repetitions="10" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="100"/>
+    <metric>sum [domain] of patches</metric>
+    <metric>mean [income] of farmers</metric>
+    <metric>sum [count_total_attacks] of farmers</metric>
+    <metric>N / A</metric>
+    <enumeratedValueSet variable="farm-size">
+      <value value="32"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="distance-btw-households" first="6" step="2" last="24"/>
+    <enumeratedValueSet variable="price">
+      <value value="2.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Number-of-Farmers">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="average-node-degree">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="social-influence">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="damage">
+      <value value="0.4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="labor_fencing">
+      <value value="0.3"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="N">
+      <value value="50"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
