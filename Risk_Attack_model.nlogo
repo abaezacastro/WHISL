@@ -5,7 +5,6 @@ Globals [
   i                        ; counter
   cost_Y                   ; Cost of production (the same for all sites)
   new_ff                   ; auxiliar variable to define new farmers (used in setup the houses)
-  wage                     ; off-farm income [$/hour]
   cost_f                   ; cost of fencing a site [$]
   m                        ; time of fencing a site [time]
 
@@ -18,6 +17,7 @@ Globals [
 tot_cost_production
 tot_damage
 tot_income
+
 ;;Auxiliar
 counter
 ]
@@ -26,12 +26,15 @@ breed [farmers farmer]
 
 farmers-own [
   Income                   ; Income
+  Income_past              ;income the timestep before
+  Income_target         ;income target
+
   N_attacks_to_farmer      ; number of attacks a farmer received in a year
   farm                     ; set of patches that belong to a farmer and define the "farm"
   farmed_patches           ; set of patches designated to cultivation in a year
   labor_hunting            ; time designated to kill animals
   Tot_Labor                ; total time available to farming
-
+  labor_available          ; labor available for farming each timestep
   attacks_list             ;list to save past attacks for adjusting subjective risk
   count_total_attacks      ;;total number of attacks in a year
   subjective-Risk
@@ -93,6 +96,7 @@ to house_location ;; houses allocated in areas with higher agro quality
     set shape "house"
     set size 2
     set Tot_Labor 20 ;;so, to make things simple if a household invest all its labor it will produce all potential crop, assuming not attacks and therefore not fences needed
+    set labor_available Tot_Labor / 2
     set Income 0
     set attacks_list [0 0 0 0 0]
     set count_total_attacks 0
@@ -153,7 +157,9 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to go
+
   define_pooc
+  define_availableLabor
   define_EU
   define_annual_productive_land
   fencing
@@ -163,10 +169,10 @@ to go
   landscape_visualization
   count-years
   subjective_risk
+  ;ask farmers [set size s_f * Income / 10]
   clean_up
   tick
 end
-
 
 
 
@@ -176,10 +182,24 @@ to define_pooc
     set p_occ ( N / A ) * (sum [Quality * Domain] of neighbors + (Quality * Domain)) / 9
   ]
 end
+ to update_target
+ ask farmers [set Income_target mean [income] of farmers]
+ end
+
+to define_availableLabor
+ask farmers [
+  if income_past  > Income_target [
+    set Tot_Labor labor_available - round(Income - Income_target) / wage
+  ]
+  if income_past  < Income_target [
+    set Tot_Labor  labor_available + round( Income_target - Income) / wage
+  ]
+  set labor_available Tot_Labor / 2
+]
+end
 
 
-
-
+;####################################
 to define_EU
   ask farmers [
     ask farm [
@@ -256,6 +276,7 @@ to calculate_income
   ask farmers [
     let agro-yield sum [Yield_Q * (1 - damage)] of farmed_patches with [N_attacks_here > 0] + sum [Yield_Q] of farmed_patches with [N_attacks_here = 0]
     set Income price * agro-yield - cost_Y * count farmed_patches
+    set income_past Income
   ]
 end
 
@@ -407,11 +428,11 @@ end
 GRAPHICS-WINDOW
 273
 39
-788
-575
+886
+673
 -1
 -1
-5.0
+3.0
 1
 10
 1
@@ -422,9 +443,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-100
+200
 0
-100
+200
 0
 0
 1
@@ -474,7 +495,7 @@ N
 N
 10
 1000
-50
+130
 1
 1
 Animals
@@ -489,7 +510,7 @@ price
 price
 0
 2
-1.5
+0.36
 0.01
 1
 NIL
@@ -504,7 +525,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 500
-100
+339
 1
 1
 farmers
@@ -513,7 +534,7 @@ HORIZONTAL
 CHOOSER
 8
 162
-246
+181
 207
 Color_Landscape
 Color_Landscape
@@ -561,17 +582,17 @@ labor_fencing
 labor_fencing
 0
 2
-0.5
+1.5
 0.1
 1
 NIL
 HORIZONTAL
 
 PLOT
-785
-206
-1032
-356
+917
+182
+1164
+332
 Income
 NIL
 NIL
@@ -593,8 +614,8 @@ SLIDER
 damage
 damage
 0
-1
-0.29
+2
+2
 0.01
 1
 NIL
@@ -609,17 +630,17 @@ farm-size
 farm-size
 0
 40
-32
+40
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-786
-49
-1033
-199
+918
+25
+1165
+175
 total # of attacks
 NIL
 NIL
@@ -634,10 +655,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot sum [count_total_attacks] of farmers"
 
 PLOT
-785
-359
-1032
-509
+917
+335
+1164
+485
 average p_occ
 NIL
 NIL
@@ -667,31 +688,31 @@ NIL
 HORIZONTAL
 
 TEXTBOX
-861
-545
-1613
-841
+907
+522
+1502
+818
 \"Quality Agro\": Tones of green to represent the quality the patch for agriculture. Ligher tones for more productive patches\n\n\"Attacks\": To show the attacks that occur in the patches with agriculture production\n\n\"Fenced patches\": To  show the state of a fence using blue tones. Darker for newer fence (that is D=~0). Lighter tones represent older or not fence at all (D=1).\n\n\"Objective probability of occupancy\": To show the true probability of an attack. darker tones for higher probability.\n\n\"Farms\": Each color represents the sites that belong to a farmer. \n\nGreen patches represent the area not occupied by farmers (Forest land)
 14
 0.0
 1
 
 SWITCH
-140
-474
-280
-507
+20
+440
+192
+473
 social-influence
 social-influence
-0
+1
 1
 -1000
 
 PLOT
-1053
-195
-1253
-345
+1185
+171
+1385
+321
 plot 1
 NIL
 NIL
@@ -704,6 +725,54 @@ false
 "" ""
 PENS
 "default" 1.0 0 -16777216 true "" "plot count patches with [domain < 1]"
+
+PLOT
+1185
+11
+1385
+161
+plot 2
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"default" 1.0 0 -16777216 true "" "histogram [who] of farmers"
+
+SLIDER
+37
+487
+209
+520
+s_f
+s_f
+0
+2
+2
+0.01
+1
+NIL
+HORIZONTAL
+
+SLIDER
+37
+544
+209
+577
+wage
+wage
+0
+10
+1
+0.001
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
