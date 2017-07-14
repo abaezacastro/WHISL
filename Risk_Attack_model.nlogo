@@ -95,7 +95,7 @@ to house_location ;; houses allocated in areas with higher agro quality
     move-to one-of max-n-of 10 (patches with [not any? farmers-here]) [Yield_Q]
     set shape "house"
     set size 2
-    set Tot_Labor 20 ;;so, to make things simple if a household invest all its labor it will produce all potential crop, assuming not attacks and therefore not fences needed
+    set Tot_Labor 20
     set labor_available Tot_Labor / 2
     set Income 0
     set attacks_list [0 0 0 0 0]
@@ -118,6 +118,7 @@ to house_location ;; houses allocated in areas with higher agro quality
     set Income 0
     set attacks_list [0 0 0 0 0]
     set count_total_attacks 0
+    set Income_target 1
   ]
     set i i + 1
     if i = Number-of-Farmers [stop]
@@ -157,7 +158,7 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to go
-
+  update_target
   define_pooc
   define_availableLabor
   define_EU
@@ -169,12 +170,11 @@ to go
   landscape_visualization
   count-years
   subjective_risk
+
   ;ask farmers [set size s_f * Income / 10]
   clean_up
   tick
 end
-
-
 
 to define_pooc
   set A sum [Domain] of patches
@@ -182,20 +182,22 @@ to define_pooc
     set p_occ ( N / A ) * (sum [Quality * Domain] of neighbors + (Quality * Domain)) / 9
   ]
 end
- to update_target
- ask farmers [set Income_target mean [income] of farmers]
- end
+
+to update_target
+   ask farmers [set Income_target mean [income] of farmers]
+end
 
 to define_availableLabor
-ask farmers [
-  if income_past  > Income_target [
-    set Tot_Labor labor_available - round(Income - Income_target) / wage
+  ask farmers [
+    if income_past  > Income_target [
+      set Tot_Labor labor_available - round((income_past - Income_target) / wage)
+      if Tot_Labor < 0 [set Tot_Labor 1]
+    ]
+    if income_past  < Income_target [
+      set Tot_Labor  labor_available + round(( Income_target - income_past )/ wage)
+    ]
+    set labor_available Tot_Labor / 2
   ]
-  if income_past  < Income_target [
-    set Tot_Labor  labor_available + round( Income_target - Income) / wage
-  ]
-  set labor_available Tot_Labor / 2
-]
 end
 
 
@@ -241,7 +243,9 @@ end
 to define_annual_productive_land          ;;farmed_patches defines the number of sites designated for agriculture in a given year
 
   ask farmers[
+
     set farmed_patches patch-set farm
+   print Tot_Labor
     while [sum [labor_needed] of farmed_patches > Tot_Labor] [
       set farmed_patches max-n-of (count farmed_patches - 1) farmed_patches [EU]
     ]
@@ -274,9 +278,10 @@ end
 
 to calculate_income
   ask farmers [
+    set income_past Income
     let agro-yield sum [Yield_Q * (1 - damage)] of farmed_patches with [N_attacks_here > 0] + sum [Yield_Q] of farmed_patches with [N_attacks_here = 0]
     set Income price * agro-yield - cost_Y * count farmed_patches
-    set income_past Income
+
   ]
 end
 
@@ -428,8 +433,8 @@ end
 GRAPHICS-WINDOW
 273
 39
-886
-673
+586
+373
 -1
 -1
 3.0
@@ -443,9 +448,9 @@ GRAPHICS-WINDOW
 1
 1
 0
-200
+100
 0
-200
+100
 0
 0
 1
@@ -495,7 +500,7 @@ N
 N
 10
 1000
-130
+767
 1
 1
 Animals
@@ -510,7 +515,7 @@ price
 price
 0
 2
-0.36
+1.24
 0.01
 1
 NIL
@@ -525,7 +530,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 500
-339
+118
 1
 1
 farmers
@@ -615,7 +620,7 @@ damage
 damage
 0
 2
-2
+1.25
 0.01
 1
 NIL
@@ -630,7 +635,7 @@ farm-size
 farm-size
 0
 40
-40
+20
 1
 1
 NIL
@@ -704,7 +709,7 @@ SWITCH
 473
 social-influence
 social-influence
-1
+0
 1
 -1000
 
@@ -768,7 +773,7 @@ wage
 wage
 0
 10
-1
+0.764
 0.001
 1
 NIL
