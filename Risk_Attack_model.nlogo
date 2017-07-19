@@ -34,6 +34,8 @@ farmers-own [
   farmed_patches           ; set of patches designated to cultivation in a year
   labor_hunting            ; time designated to kill animals
   Tot_Labor                ; total time available to farming
+  total_fence
+total_attacks
   labor_available          ; labor available for farming each timestep
   attacks_list             ;list to save past attacks for adjusting subjective risk
   count_total_attacks      ;;total number of attacks in a year
@@ -287,16 +289,16 @@ end
 
 to attacks
   ask farmers [
-    ask farm [set N_attacks_here 0]  ;;erase fast events
-    ask farmed_patches [                   ;;in patches of the farm that have beeen used for production an attach can happend
+    ask farmed_patches [                   ;;an attack can happen in patches inside the farm used for production
       set N_attacks_here ifelse-value (p_occ > random-float 1) [1] [0]
     ]
     set attacks_list replace-item counter attacks_list (sum [N_attacks_here] of farm)
     set count_total_attacks (sum [N_attacks_here] of farm)
-
+    set total_attacks total_attacks + count_total_attacks
   ]
 
 end
+
 to count-years
   set counter counter + 1
   if counter > 4 [set counter 0]
@@ -304,9 +306,12 @@ end
 to clean_up
 
     ask farmers [
+           set total_fence total_fence + sum [domain] of farm
+
       ask farm [
         set Landtype "F"
         set labor_needed 0
+        set N_attacks_here 0
       ]
     ]
   end
@@ -426,8 +431,45 @@ to landscape_visualization
   ]
 
 end
+
+
 ;##################################################################################################################################################
 ;##################################################################################################################################################
+to export-map
+ let PATH "c:/Users/abaezaca/Dropbox (ASU)/Documents/Carnivore_coexistance/risk-perception-wildlife-attack/simulation_results/"
+    let fn (word PATH (word N_run "-" (word "dist-nodes-damage-labor_fencing-socialInfleunce" (word distance-btw-households (word average-node-degree "-" (word damage "-" (word labor_fencing "-" (word social-influence ".txt"))))))))
+    ;let fn "estado_key.txt"
+    if file-exists? fn
+    [ file-delete fn]
+    file-open fn
+
+
+    file-write distance-btw-households
+    file-write Number-of-Farmers
+    file-write farm-size
+    file-write average-node-degree
+    file-write N
+    file-write damage
+    file-write labor_fencing
+    file-write ifelse-value (social-influence = TRUE)[1][0]
+
+
+    foreach sort-on [who] farmers[
+      ask ?
+      [
+       file-write who                                    ;;write the ID of each ageb using a numeric value (update acording to Marco's Identification)
+        file-write xcor                   ;;write the value of the atribute
+        file-write ycor
+        file-write count_total_attacks
+        file-write total_fence / ticks
+        file-write ifelse-value ((count my_FIRSTD_neigh + count my_secondD_neigh) > 0) [total_attacks / (count my_FIRSTD_neigh + count my_secondD_neigh)][0]
+        file-write sum [total_attacks] of my_FIRSTD_neigh
+        file-write sum [total_attacks] of my_secondD_neigh
+       ]
+    ]
+    file-close                                        ;close the File
+end
+
 ;##################################################################################################################################################
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -500,7 +542,7 @@ N
 N
 10
 1000
-767
+117
 1
 1
 Animals
@@ -515,7 +557,7 @@ price
 price
 0
 2
-1.24
+2.5
 0.01
 1
 NIL
@@ -530,7 +572,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 500
-118
+100
 1
 1
 farmers
@@ -587,7 +629,7 @@ labor_fencing
 labor_fencing
 0
 2
-1.5
+0.5
 0.1
 1
 NIL
@@ -620,7 +662,7 @@ damage
 damage
 0
 2
-1.25
+0.3
 0.01
 1
 NIL
@@ -635,7 +677,7 @@ farm-size
 farm-size
 0
 40
-20
+32
 1
 1
 NIL
@@ -709,7 +751,7 @@ SWITCH
 473
 social-influence
 social-influence
-0
+1
 1
 -1000
 
@@ -775,6 +817,21 @@ wage
 10
 0.764
 0.001
+1
+NIL
+HORIZONTAL
+
+SLIDER
+284
+436
+456
+469
+N_run
+N_run
+1
+10
+10
+1
 1
 NIL
 HORIZONTAL
@@ -1125,9 +1182,10 @@ NetLogo 5.2.1
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="vary_demage" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="vary_demage" repetitions="1" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
+    <final>export-map</final>
     <timeLimit steps="100"/>
     <metric>sum [domain] of patches</metric>
     <metric>mean [income] of farmers</metric>
@@ -1158,6 +1216,9 @@ NetLogo 5.2.1
     </enumeratedValueSet>
     <enumeratedValueSet variable="N">
       <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="N_run">
+      <value value="10"/>
     </enumeratedValueSet>
   </experiment>
   <experiment name="vary_Nlinks" repetitions="10" runMetricsEveryStep="false">
