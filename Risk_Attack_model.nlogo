@@ -64,6 +64,7 @@ patches-own [
 to SETUP
   clear-all
   reset-ticks
+;random-seed 47822
   quality_landscape        ;define quality of land
   set cost_Y 0.5             ;need to be parametrized
   set counter 0
@@ -102,6 +103,7 @@ to house_location ;; houses allocated in areas with higher agro quality
     set Income 0
     set attacks_list [0 0 0 0 0]
     set count_total_attacks 0
+    set total_attacks 0
   ]
 
   set i 0
@@ -120,6 +122,7 @@ to house_location ;; houses allocated in areas with higher agro quality
     set Income 0
     set attacks_list [0 0 0 0 0]
     set count_total_attacks 0
+    set total_attacks 0
     set Income_target 1
   ]
     set i i + 1
@@ -307,6 +310,7 @@ to clean_up
 
     ask farmers [
            set total_fence total_fence + sum [domain] of farm
+           set count_total_attacks 0
 
       ask farm [
         set Landtype "F"
@@ -437,7 +441,7 @@ end
 ;##################################################################################################################################################
 to export-map
  let PATH "c:/Users/abaezaca/Dropbox (ASU)/Documents/Carnivore_coexistance/risk-perception-wildlife-attack/simulation_results/"
-    let fn (word PATH (word N_run "-" (word "dist-nodes-damage-labor_fencing-socialInfleunce" (word distance-btw-households (word average-node-degree "-" (word damage "-" (word labor_fencing "-" (word social-influence ".txt"))))))))
+    let fn (word PATH (word N_run "-" (word "dist-nodes-damage-labor_fencing-socialInfluence-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word labor_fencing "-" (word social-influence ".txt"))))))))
     ;let fn "estado_key.txt"
     if file-exists? fn
     [ file-delete fn]
@@ -460,11 +464,12 @@ to export-map
        file-write who                                    ;;write the ID of each ageb using a numeric value (update acording to Marco's Identification)
         file-write xcor                   ;;write the value of the atribute
         file-write ycor
-        file-write count_total_attacks
+        file-write total_attacks
         file-write total_fence / ticks
         file-write ifelse-value ((count my_FIRSTD_neigh + count my_secondD_neigh) > 0) [total_attacks / (count my_FIRSTD_neigh + count my_secondD_neigh)][0]
         file-write sum [total_attacks] of my_FIRSTD_neigh
         file-write sum [total_attacks] of my_secondD_neigh
+        file-write count farmers in-radius 5
        ]
     ]
     file-close                                        ;close the File
@@ -542,7 +547,7 @@ N
 N
 10
 1000
-117
+50
 1
 1
 Animals
@@ -662,7 +667,7 @@ damage
 damage
 0
 2
-0.3
+2
 0.01
 1
 NIL
@@ -728,7 +733,7 @@ average-node-degree
 average-node-degree
 0
 10
-4
+8
 1
 1
 NIL
@@ -751,7 +756,7 @@ SWITCH
 473
 social-influence
 social-influence
-1
+0
 1
 -1000
 
@@ -1185,11 +1190,10 @@ NetLogo 5.2.1
   <experiment name="vary_demage" repetitions="1" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
-    <final>export-map</final>
     <timeLimit steps="100"/>
     <metric>sum [domain] of patches</metric>
     <metric>mean [income] of farmers</metric>
-    <metric>sum [count_total_attacks] of farmers</metric>
+    <metric>sum [total_attacks] of farmers</metric>
     <metric>N / A</metric>
     <enumeratedValueSet variable="farm-size">
       <value value="32"/>
@@ -1205,25 +1209,26 @@ NetLogo 5.2.1
     </enumeratedValueSet>
     <enumeratedValueSet variable="average-node-degree">
       <value value="4"/>
+      <value value="6"/>
+      <value value="8"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="social-influence">
       <value value="false"/>
       <value value="true"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="damage" first="0.05" step="0.05" last="0.8"/>
+    <steppedValueSet variable="damage" first="0" step="0.1" last="2"/>
     <enumeratedValueSet variable="labor_fencing">
       <value value="0.5"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="N">
       <value value="50"/>
     </enumeratedValueSet>
-    <enumeratedValueSet variable="N_run">
-      <value value="10"/>
-    </enumeratedValueSet>
+    <steppedValueSet variable="N_run" first="1" step="1" last="10"/>
   </experiment>
-  <experiment name="vary_Nlinks" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="vary_Nlinks" repetitions="1" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
+    <final>export-map</final>
     <timeLimit steps="100"/>
     <metric>sum [domain] of patches</metric>
     <metric>mean [income] of farmers</metric>
@@ -1254,10 +1259,12 @@ NetLogo 5.2.1
     <enumeratedValueSet variable="N">
       <value value="50"/>
     </enumeratedValueSet>
+    <steppedValueSet variable="N_run" first="1" step="1" last="10"/>
   </experiment>
-  <experiment name="vary_distance_btw_farmers" repetitions="10" runMetricsEveryStep="false">
+  <experiment name="vary_distance_btw_farmers" repetitions="1" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
+    <final>export-map</final>
     <timeLimit steps="100"/>
     <metric>sum [domain] of patches</metric>
     <metric>mean [income] of farmers</metric>
@@ -1287,6 +1294,57 @@ NetLogo 5.2.1
     </enumeratedValueSet>
     <enumeratedValueSet variable="N">
       <value value="50"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="N_run" first="1" step="1" last="10"/>
+  </experiment>
+  <experiment name="social_influence" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <final>export-map</final>
+    <timeLimit steps="100"/>
+    <metric>sum [domain] of patches</metric>
+    <metric>mean [income] of farmers</metric>
+    <metric>sum [total_attacks] of farmers</metric>
+    <metric>N / A</metric>
+    <enumeratedValueSet variable="price">
+      <value value="2.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Number-of-Farmers">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="s_f">
+      <value value="2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="wage">
+      <value value="0.764"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="distance-btw-households">
+      <value value="20"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="average-node-degree">
+      <value value="6"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="social-influence">
+      <value value="false"/>
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="farm-size">
+      <value value="32"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="N">
+      <value value="50"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="labor_fencing">
+      <value value="0.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="Color_Landscape">
+      <value value="&quot;Fenced patches&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="N_run">
+      <value value="9"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="damage">
+      <value value="1.8"/>
     </enumeratedValueSet>
   </experiment>
 </experiments>
