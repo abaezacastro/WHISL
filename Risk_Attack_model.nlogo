@@ -77,7 +77,13 @@ to SETUP
   ]
   house_location
   define_farms
-  setup-spatially-clustered-network
+
+  if topology = "spatially-clustered"[
+    setup-spatially-clustered-network
+  ]
+  if  topology = "random"[
+    setup_random_network
+  ]
   landscape_visualization
 end
 
@@ -427,6 +433,27 @@ to setup-spatially-clustered-network                                       ;to c
   ]
 end
 ;##################################################################################################################################################
+to setup_random_network
+
+  let num-links (average-node-degree * Number-of-Farmers) / 2
+  while [count links < num-links ]
+  [
+    ask one-of farmers
+    [
+      let choice one-of (other farmers with [not link-neighbor? myself])
+      if choice != nobody [ create-link-with choice [
+          set thickness 0.5
+          set color magenta] ]
+    ]
+  ]
+
+  ask farmers [
+    set my_firstD_neigh turtle-set [other-end] of my-links                           ;to define the set agentthe first order neighbors of farmers
+    set my_secondD_neigh turtle-set [[other-end] of my-links] of my_firstD_neigh     ;to define the agentset the second order neighbors of farmers (friends of my friends)
+    set my_secondD_neigh my_secondD_neigh with [who != [who] of myself]              ;remove the calling farmers from the second degree links
+  ]
+
+end
 ;##################################################################################################################################################
 to landscape_visualization
   if color_Landscape = "Quality Agro" [
@@ -521,16 +548,24 @@ to export-map
     file-close                                        ;close the File
 end
 
+to re-wire
+if topology = "spatially-clustered"[
+    setup-spatially-clustered-network
+  ]
+  if  topology = "random"[
+    setup_random_network
+  ]
+end
 ;##################################################################################################################################################
 @#$#@#$#@
 GRAPHICS-WINDOW
-224
-13
-570
-380
+211
+29
+678
+517
 -1
 -1
-3.33
+4.525
 1
 10
 1
@@ -551,9 +586,9 @@ ticks
 30.0
 
 BUTTON
-24
-206
-90
+23
+205
+87
 239
 NIL
 setup
@@ -608,7 +643,7 @@ price
 price
 0
 3
-0.23
+0.2
 0.01
 1
 NIL
@@ -623,21 +658,21 @@ Number-of-Farmers
 Number-of-Farmers
 1
 500
-100
+222
 1
 1
 farmers
 HORIZONTAL
 
 CHOOSER
-479
-482
-652
-527
+684
+29
+857
+74
 Color_Landscape
 Color_Landscape
 "Quality Agro" "Quality wildlife" "Attacks" "Fenced patches" "objective probability of occupancy" "farms"
-4
+3
 
 SLIDER
 13
@@ -655,10 +690,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-85
-240
-148
-273
+87
+239
+153
+272
 NIL
 Go
 T
@@ -680,7 +715,7 @@ labor_fencing
 labor_fencing
 0
 2
-0.5
+0.3
 0.1
 1
 NIL
@@ -713,7 +748,7 @@ damage
 damage
 0
 1
-0.88
+0.77
 0.01
 1
 NIL
@@ -779,16 +814,16 @@ average-node-degree
 average-node-degree
 0
 10
-4
+5
 1
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-907
+917
 522
-1502
+1512
 818
 \"Quality Agro\": Tones of green to represent the quality the patch for agriculture. Ligher tones for more productive patches\n\n\"Attacks\": To show the attacks that occur in the patches with agriculture production\n\n\"Fenced patches\": To  show the state of a fence using blue tones. Darker for newer fence (that is D=~0). Lighter tones represent older or not fence at all (D=1).\n\n\"Objective probability of occupancy\": To show the true probability of an attack. darker tones for higher probability.\n\n\"Farms\": Each color represents the sites that belong to a farmer. \n\nGreen patches represent the area not occupied by farmers (Forest land)
 14
@@ -796,22 +831,22 @@ TEXTBOX
 1
 
 SWITCH
-20
-440
-192
-473
+686
+175
+858
+208
 social-influence
 social-influence
-1
+0
 1
 -1000
 
 PLOT
-1185
-171
-1385
-321
-plot 1
+694
+226
+894
+376
+Area controled by farmers againt encounters
 NIL
 NIL
 0.0
@@ -825,10 +860,10 @@ PENS
 "default" 1.0 0 -16777216 true "" "plot count patches with [domain < 1 and farmer_owner > 0]"
 
 SLIDER
-37
-544
-209
-577
+19
+440
+191
+473
 wage
 wage
 1
@@ -840,10 +875,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-328
-624
-500
-657
+19
+477
+191
+510
 N_run
 N_run
 1
@@ -855,14 +890,41 @@ NIL
 HORIZONTAL
 
 CHOOSER
-245
-547
-383
-592
+685
+121
+857
+166
 landscape_scenario
 landscape_scenario
 1 2 3
-0
+2
+
+CHOOSER
+685
+75
+857
+120
+topology
+topology
+"random" "spatially-clustered"
+1
+
+BUTTON
+87
+205
+153
+238
+NIL
+re-wire
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
