@@ -1,3 +1,4 @@
+extensions [csv]
 Globals [
   A                        ; Area for wildlife, weighted by quality and domain
   table_landQ              ; table cost-quality
@@ -28,6 +29,7 @@ farmers-own [
   Income_past              ;income the timestep before
   Income_target         ;income target
   income_list
+  income_list_full
   N_attacks_to_farmer      ; number of attacks a farmer received in a year
   farm                     ; set of patches that belong to a farmer and define the "farm"
   farmed_patches           ; set of patches designated to cultivation in a year
@@ -36,6 +38,7 @@ farmers-own [
   total_attacks
   labor_available          ; labor available for farming each timestep
   attacks_list             ;list to save past attacks for adjusting subjective risk
+  attacks_list_full        ;time series of every attack 1 if attack happened; 0 otherwise
   count_total_attacks      ;;total number of attacks in a year
   subjective-Risk
   my_firstD_neigh
@@ -126,14 +129,16 @@ to house_location ;; houses allocated in areas with higher agro quality
     set Tot_Labor farm-size ;; set the available labor
     set Income 1
     set attacks_list [0 0 0 0 0]
+    set attacks_list_full []
     set income_list (list 0 0 0 0 0)
+    set income_list_full []
     set count_total_attacks 0
     set total_attacks 0
     set Income_target farm-size * (price - cost_Y ) / 2
     set labor_available Tot_Labor
   ]
 
-  set i 0
+  set i count farmers
   loop [
     ask one-of farmers [
     set new_ff one-of patches in-radius distance-btw-households with [not any? farmers-here]
@@ -148,7 +153,9 @@ to house_location ;; houses allocated in areas with higher agro quality
     set Tot_Labor farm-size ;; set the available labor
     set Income 1
     set attacks_list [0 0 0 0 0]
+    set attacks_list_full []
     set income_list (list 0 0 0 0 0)
+    set income_list_full []
     set count_total_attacks 0
     set total_attacks 0
     set Income_target  farm-size * (price - cost_Y ) / 2
@@ -318,6 +325,7 @@ to calculate_income
     set Income price * agro-yield - cost_Y * count farmed_patches
     let ilau (but-first income_list)
     set income_list lput Income ilau
+    set income_list_full lput Income income_list_full
   ]
 end
 
@@ -331,6 +339,7 @@ to attacks
     let n_list but-first attacks_list
     ;print n_list
     set attacks_list lput sum [N_attacks_here] of farm n_list
+    set attacks_list_full lput (sum [N_attacks_here] of farm) attacks_list_full
     set count_total_attacks (sum [N_attacks_here] of farm)
     set total_attacks total_attacks + count_total_attacks
   ]
@@ -377,7 +386,7 @@ to subjective_risk
       let fdf map [sum [item ? attacks_list] of my_FIRSTD_neigh][0 1 2 3 4]
       let sdn (map [sum [item ? attacks_list] of my_secondD_neigh][0 1 2 3 4])
 
-      let attacks_neigh (map [?1 + (0.25 * ?2) + ?3] fdf sdn attacks_list)
+      let attacks_neigh (map [0.75 * ?1 + (0.25 * ?2) + ?3] fdf sdn attacks_list)
 
 
       set s sum (map * dd attacks_neigh)
@@ -387,7 +396,6 @@ to subjective_risk
           ifelse (?1 > 0) [set w_t lput (?1 * ?2) w_t][set w_t lput ?2 w_t]
         ])
       set subjective-risk (s + alpha) / (sum w_t + alpha + beta)
-    ;  print (s / (sum w_t))
     ]
 
     [
@@ -469,11 +477,7 @@ to landscape_visualization
     ]
   ]
   if color_Landscape = "Attacks" [
-    ask patches with [landtype = "F"][
-      set pcolor 55
-      if N_attacks_here = 1 [set pcolor 15]
-    ]
-    ask patches with   [landtype = "A"][
+    ask patches with [farmer_owner > 0][
       set pcolor yellow
       if N_attacks_here = 1 [set pcolor 15]
     ]
@@ -513,12 +517,12 @@ end
 ;##################################################################################################################################################
 ;##################################################################################################################################################
 to export-map
- let PATH "c:/Users/abaezaca/Dropbox (ASU)/Documents/Carnivore_coexistance/risk-perception-wildlife-attack/simulation_results/"
-    let fn (word PATH (word N_run "-" (word "dist-nodes-damage-labor_fencing-socialInfluence-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word labor_fencing "-" (word social-influence ".txt"))))))))
-    ;let fn "estado_key.txt"
-    if file-exists? fn
-    [ file-delete fn]
-    file-open fn
+; let PATH "c:/Users/abaezaca/Dropbox (ASU)/Documents/Carnivore_coexistance/risk-perception-wildlife-attack/simulation_results/"
+ file-open (word N_run "-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word (ifelse-value (social-influence = TRUE)[1][0]) ".txt")))))
+
+ ;   if file-exists? fn
+  ;  [ file-delete fn]
+  ;  file-open fn
 
 
     file-write distance-btw-households
@@ -547,9 +551,31 @@ to export-map
     ]
     file-close                                        ;close the File
 end
+;##################################################################################################################################################
+;##################################################################################################################################################
+to write-csv-file
+    let ppcsv []
+    let ICcsv []
+    foreach sort-on [who] farmers[
+      ask ?[
+        set attacks_list_full lput who attacks_list_full
+        set income_list_full lput who income_list_full
+        set ppcsv lput attacks_list_full ppcsv
+        set ICcsv lput income_list_full ICcsv
+      ]
+    ]
 
+
+    csv:to-file (word  "TS_attacks" "-" (word N_run "-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word (ifelse-value (social-influence = TRUE)[1][0]) ".csv")))))) ppcsv
+    csv:to-file (word  "TS_income"  "-" (word N_run "-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word (ifelse-value (social-influence = TRUE)[1][0]) ".csv")))))) ICcsv
+
+end
+
+;##################################################################################################################################################
+;##################################################################################################################################################
 to re-wire
-if topology = "spatially-clustered"[
+    ask links [ die ]
+  if topology = "spatially-clustered"[
     setup-spatially-clustered-network
   ]
   if  topology = "random"[
@@ -559,10 +585,10 @@ end
 ;##################################################################################################################################################
 @#$#@#$#@
 GRAPHICS-WINDOW
-211
-29
-678
-517
+197
+10
+664
+498
 -1
 -1
 4.525
@@ -643,7 +669,7 @@ price
 price
 0
 3
-0.2
+0.55
 0.01
 1
 NIL
@@ -658,7 +684,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 500
-222
+241
 1
 1
 farmers
@@ -683,7 +709,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-16
+25
 1
 1
 NIL
@@ -748,7 +774,7 @@ damage
 damage
 0
 1
-0.77
+0.4
 0.01
 1
 NIL
@@ -814,7 +840,7 @@ average-node-degree
 average-node-degree
 0
 10
-5
+2
 1
 1
 NIL
@@ -846,7 +872,7 @@ PLOT
 226
 894
 376
-Area controled by farmers againt encounters
+APatches with less quality for wildlife
 NIL
 NIL
 0.0
@@ -897,7 +923,7 @@ CHOOSER
 landscape_scenario
 landscape_scenario
 1 2 3
-2
+0
 
 CHOOSER
 685
