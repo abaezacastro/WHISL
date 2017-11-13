@@ -1,0 +1,9 @@
+executable = run.sh
+
+Error = {run_id}.err
+Log = {run_id}.log
+Arguments = setup_{run_id}.xml output_{run_id}.csv {threads}
+request_cpus = {threads}
+
+Queue
+
