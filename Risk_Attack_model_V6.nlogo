@@ -1,4 +1,5 @@
 extensions [csv]
+;test to see if we are ok
 Globals [
   A                        ; Area for wildlife, weighted by quality and domain
   table_landQ              ; table cost-quality
