@@ -1,5 +1,5 @@
 ---
-title: "carinivore-attack-social-risk-perpection"
+title: "wildlife-attacks-social-risk-perception"
 author: "Andres Baeza"
 date: "April 6, 2017"
 output: html_document
@@ -13,22 +13,23 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 require(ggplot2)
+library(reshape2)
 ```
 ###Effect of social influence for different cost of attacks (damage)
 ```{r, echo=FALSE,fig.width=18,fig.height=4}
 #read function for multiplot
 source("C:/Users/abaezaca/Documents/MEGADAPT/ABM_V2/multiplot_function.R")
 
-R1<-data.frame(read.csv(file="C:/Users/abaezaca/Documents/Carnivore_coexistance/simulation_results/Risk_Attack_model vary_demage-table.csv",header = TRUE,skip = 6,comment.char ="#"))
+R1<-data.frame(read.csv(file="C:/Users/abaezaca/Dropbox (ASU)/Documents/Carnivore_coexistance/risk-perception-wildlife-attack/simulation_results/Risk_Attack_model vary_demage-tableD.csv",header = TRUE,skip = 6,comment.char ="#"))
 
-si=ggplot(R1,aes(x=damage,y=sum..domain..of.patches,colour = social.influence))+
+Fence=ggplot(R1,aes(x=damage,y=sum..domain..of.patches,colour = social.influence,size=average.node.degree))+
   geom_point()+
    labs(x = "damage per attack", y="Area available for wildlife",colour ="Social influence?")+
   scale_colour_hue(labels=c("false","true"),guide = 'none')+
 theme(text = element_text(size=12))+
     geom_smooth()
 
-a=ggplot(R1,aes(x=damage,y=sum..count_total_attacks..of.farmers,colour = social.influence))+
+ataques=ggplot(R1,aes(x=damage,y=sum..total_attacks..of.farmers,colour = social.influence,size=average.node.degree))+
   geom_point()+
    labs(x = "damage per attack", y="total number of attacks",colour ="Social influence?")+
   scale_colour_hue(labels=c("false","true"),guide = 'none')+
@@ -36,10 +37,11 @@ theme(text = element_text(size=12))+
     geom_smooth()+scale_color_discrete()
 
 
-I=ggplot(R1,aes(x=damage,y=mean..income..of.farmers,colour = social.influence))+
+income=ggplot(R1,aes(x=damage,y=mean..income..of.farmers,color = social.influence,size=average.node.degree))+
   geom_point()+
    labs(x = "damage per attack", y="mean income",colour ="Social influence?")+
   scale_colour_hue(labels=c("false","true"),guide = 'none')+
+  scale_size()+
 theme(text = element_text(size=12))+
     geom_smooth()
 
@@ -47,7 +49,7 @@ theme(text = element_text(size=12))+
 #  annotate("text",x=0.1,y=19.5,label="a", size=8)
 ##Efect of environmental forces
 
-multiplot(si,I,a,cols=3)
+multiplot(Fence,income,ataques,cols=3)
 
 ```
 
@@ -116,5 +118,55 @@ I=ggplot(R3,aes(x=distance.btw.households,y=mean..income..of.farmers))+
 ##Efect of environmental forces
 
 multiplot(si,I,a,cols=3)
+
+```
+
+
+
+###read indivdual farmers data
+```{r, echo=FALSE,fig.width=5,fig.height=5}
+SP_dat<-as.data.frame(matrix(ncol=9,nrow=100))
+SP_dat_NS<-as.data.frame(matrix(ncol=9,nrow=100))
+WS<-scan(file = 'c:/Users/abaezaca/Dropbox (ASU)/Documents/Carnivore_coexistance/risk-perception-wildlife-attack/simulation_results/9-dist-nodes-damage-labor_fencing-socialInfluence-20-6-1.8-0.5-true.txt')
+
+WOS<-scan(file = 'c:/Users/abaezaca/Dropbox (ASU)/Documents/Carnivore_coexistance/risk-perception-wildlife-attack/simulation_results/9-dist-nodes-damage-labor_fencing-socialInfluence-20-6-1.8-0.5-false.txt')
+
+
+
+count = 8
+for (i in 1:100){
+  for (j in 1 :9){
+   count = count + 1
+  SP_dat[i,j]<-WS[count]
+  SP_dat_NS[i,j]<-WOS[count]
+  }
+}
+SP_dat$social<-rep(1,length(SP_dat$V2))
+SP_dat_NS$social<-rep(0,length(SP_dat_NS$V2))
+SP_dat<-rbind(SP_dat,SP_dat_NS)
+colnames(SP_dat)<-c("ID","xcor","ycor","attacks","total_fence","attacks_per_neigh","fist_degree","second_degree","Neigh","social")
+
+#distance
+d<-dist(SP_dat)
+df <- melt(as.matrix(d), varnames = c("row", "col"))
+df<-df[df$row > df$col,]
+
+
+CVS<-ggplot(data=SP_dat,aes(x=xcor,y=ycor,size=attacks,color=as.factor(social)))+geom_point(shape =1)+coord_equal()+ labs(title = "attacks")+ylab("ycor")+xlab("xcor")
+CVS
+```
+
+
+
+#attaks/neigh
+```{r,fig.width=5,fig.height=5}
+CVSN<-ggplot(data=SP_dat,aes(x=xcor,y=ycor,size=attacks_per_neigh,color=as.factor(social)))+geom_point(shape =1)+coord_equal()+ labs(title = "attacks")+ylab("ycor")+xlab("xcor")
+CVSN
+
+```
+
+```{r,fig.width=5,fig.height=5}
+CVSN<-ggplot(data=SP_dat,aes(x=Neigh,y=attacks,color=as.factor(social),size=total_fence))+geom_point(shape =1)+ labs(title = "attacks vs neigh")+ylab("")+xlab("")
+CVSN
 
 ```

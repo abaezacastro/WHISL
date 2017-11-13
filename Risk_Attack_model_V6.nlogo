@@ -1,5 +1,4 @@
 extensions [csv]
-;test to see if we are ok
 Globals [
   A                        ; Area for wildlife, weighted by quality and domain
   table_landQ              ; table cost-quality
@@ -699,7 +698,7 @@ CHOOSER
 Color_Landscape
 Color_Landscape
 "Quality Agro" "Quality wildlife" "Attacks" "Fenced patches" "objective probability of occupancy" "farms"
-3
+4
 
 SLIDER
 13
@@ -873,7 +872,7 @@ PLOT
 226
 894
 376
-Patches with less quality for wildlife
+APatches with less quality for wildlife
 NIL
 NIL
 0.0
@@ -924,7 +923,7 @@ CHOOSER
 landscape_scenario
 landscape_scenario
 1 2 3
-2
+0
 
 CHOOSER
 685
