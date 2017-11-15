@@ -231,12 +231,11 @@ end
 
 to define_availableLabor
   ask farmers [
-    set Tot_Labor 1
     ifelse income_past  > Income_target [
-      set Tot_Labor labor_available - round((income_past - Income_target) / wage)
+      set Tot_Labor labor_available - (income_past - Income_target) / wage
       if Tot_Labor < 0 [set Tot_Labor 1]
     ][
-      set Tot_Labor  labor_available + round(( Income_target - income_past )/ wage)
+      set Tot_Labor  labor_available + ( Income_target - income_past )/ wage
     ]
 
     set labor_available Tot_Labor
@@ -388,7 +387,6 @@ to subjective_risk
 
       let attacks_neigh (map [ [?1 ?2 ?3] -> 0.75 * ?1 + (0.25 * ?2) + ?3 ] fdf sdn attacks_list)
 
-
       set s sum (map * dd attacks_neigh)
       let w_t []
       (foreach attacks_neigh dd
@@ -398,8 +396,7 @@ to subjective_risk
       set subjective-risk (s + alpha) / (sum w_t + alpha + beta)
     ]
 
-    [
-
+    [ ;no social influence
       set s sum (map * dd attacks_list)
       let w_t []
       (foreach attacks_list dd
@@ -598,7 +595,7 @@ GRAPHICS-WINDOW
 1
 1
 0
-0
+1
 1
 1
 0
@@ -654,7 +651,7 @@ N
 N
 10
 1000
-357.0
+187.0
 1
 1
 Animals
@@ -683,8 +680,8 @@ SLIDER
 Number-of-Farmers
 Number-of-Farmers
 1
-500
-241.0
+100
+81.0
 1
 1
 farmers
@@ -698,7 +695,7 @@ CHOOSER
 Color_Landscape
 Color_Landscape
 "Quality Agro" "Quality wildlife" "Attacks" "Fenced patches" "objective probability of occupancy" "farms"
-4
+3
 
 SLIDER
 13
@@ -709,7 +706,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-25.0
+21.0
 1
 1
 NIL
@@ -748,10 +745,10 @@ NIL
 HORIZONTAL
 
 PLOT
-917
-182
-1164
-332
+920
+181
+1161
+328
 Income
 NIL
 NIL
@@ -773,8 +770,8 @@ SLIDER
 damage
 damage
 0
-1
-0.4
+2
+1.38
 0.01
 1
 NIL
@@ -788,8 +785,8 @@ SLIDER
 farm-size
 farm-size
 0
-40
-32.0
+100
+100.0
 1
 1
 NIL
@@ -800,7 +797,7 @@ PLOT
 25
 1165
 175
-total # of attacks
+Tot_Labor
 NIL
 NIL
 0.0
@@ -811,13 +808,13 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot sum [count_total_attacks] of farmers"
+"default" 1.0 0 -16777216 true "" "plot sum [Tot_Labor] of farmers"
 
 PLOT
-917
-335
-1164
-485
+668
+397
+915
+547
 average p_occ
 NIL
 NIL
@@ -840,7 +837,7 @@ average-node-degree
 average-node-degree
 0
 10
-2.0
+4.0
 1
 1
 NIL
@@ -872,7 +869,7 @@ PLOT
 226
 894
 376
-APatches with less quality for wildlife
+Patches with less quality for wildlife
 NIL
 NIL
 0.0
@@ -894,7 +891,7 @@ wage
 wage
 1
 10
-1.0
+1.631
 0.001
 1
 NIL
@@ -1456,6 +1453,47 @@ NetLogo 6.0.1
     <enumeratedValueSet variable="damage">
       <value value="1.8"/>
     </enumeratedValueSet>
+  </experiment>
+  <experiment name="Industrial_AA" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <timeLimit steps="1000"/>
+    <metric>sum [domain] of patches</metric>
+    <metric>mean [income] of farmers</metric>
+    <metric>sum [total_attacks] of farmers</metric>
+    <metric>A</metric>
+    <metric>mean [p_occ] of patches with [farmer_owner &gt; 0]</metric>
+    <metric>mean [subjective-risk] of farmers</metric>
+    <enumeratedValueSet variable="Number-of-Farmers">
+      <value value="20"/>
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="farm-size">
+      <value value="10"/>
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="distance-btw-households">
+      <value value="10"/>
+      <value value="60"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="price">
+      <value value="2.5"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="average-node-degree">
+      <value value="4"/>
+      <value value="8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="social-influence">
+      <value value="false"/>
+      <value value="true"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="damage" first="0" step="0.1" last="2"/>
+    <enumeratedValueSet variable="N">
+      <value value="50"/>
+      <value value="100"/>
+      <value value="200"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="N_run" first="1" step="1" last="20"/>
   </experiment>
 </experiments>
 @#$#@#$#@
