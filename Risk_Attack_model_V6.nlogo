@@ -16,7 +16,7 @@ Globals [
 ;;reporters
 tot_cost_production
 tot_damage
-tot_income
+
 
 ;;Auxiliar
 counter
@@ -30,6 +30,7 @@ farmers-own [
   Income_target         ;income target
   income_list
   income_list_full
+  tot_income
   N_attacks_to_farmer      ; number of attacks a farmer received in a year
   farm                     ; set of patches that belong to a farmer and define the "farm"
   farmed_patches           ; set of patches designated to cultivation in a year
@@ -325,6 +326,7 @@ to calculate_income
     let ilau (but-first income_list)
     set income_list lput Income ilau
     set income_list_full lput Income income_list_full
+    if ticks > 900 [set tot_income tot_income + Income]
   ]
 end
 
@@ -340,7 +342,9 @@ to attacks
     set attacks_list lput sum [N_attacks_here] of farm n_list
     set attacks_list_full lput (sum [N_attacks_here] of farm) attacks_list_full
     set count_total_attacks (sum [N_attacks_here] of farm)
-    set total_attacks total_attacks + count_total_attacks
+    if ticks > 900[
+      set total_attacks total_attacks + count_total_attacks
+    ]
   ]
 
 end
@@ -550,7 +554,7 @@ to export-map
 end
 ;##################################################################################################################################################
 ;##################################################################################################################################################
-to write-csv-file
+to write-timeseries-data
     let ppcsv []
     let ICcsv []
     foreach sort-on [who] farmers[ ?1 ->
@@ -584,11 +588,11 @@ end
 GRAPHICS-WINDOW
 197
 10
-662
-476
+646
+460
 -1
 -1
-4.525
+4.37
 1
 10
 1
@@ -651,7 +655,7 @@ N
 N
 10
 1000
-187.0
+638.0
 1
 1
 Animals
@@ -666,7 +670,7 @@ price
 price
 0
 3
-0.55
+0.93
 0.01
 1
 NIL
@@ -681,7 +685,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 100
-81.0
+95.0
 1
 1
 farmers
@@ -706,7 +710,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-21.0
+54.0
 1
 1
 NIL
@@ -745,10 +749,10 @@ NIL
 HORIZONTAL
 
 PLOT
-920
-181
-1161
-328
+914
+415
+1155
+562
 Income
 NIL
 NIL
@@ -771,7 +775,7 @@ damage
 damage
 0
 2
-1.38
+1.41
 0.01
 1
 NIL
@@ -786,35 +790,17 @@ farm-size
 farm-size
 0
 100
-100.0
+82.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-918
-25
-1165
-175
-Tot_Labor
-NIL
-NIL
-0.0
-10.0
-0.0
-10.0
-true
-false
-"" ""
-PENS
-"default" 1.0 0 -16777216 true "" "plot sum [Tot_Labor] of farmers"
-
-PLOT
-668
-397
-915
-547
+667
+415
+914
+565
 average p_occ
 NIL
 NIL
@@ -837,19 +823,19 @@ average-node-degree
 average-node-degree
 0
 10
-4.0
+7.0
 1
 1
 NIL
 HORIZONTAL
 
 TEXTBOX
-917
-522
-1512
-818
-\"Quality Agro\": Tones of green to represent the quality the patch for agriculture. Ligher tones for more productive patches\n\n\"Attacks\": To show the attacks that occur in the patches with agriculture production\n\n\"Fenced patches\": To  show the state of a fence using blue tones. Darker for newer fence (that is D=~0). Lighter tones represent older or not fence at all (D=1).\n\n\"Objective probability of occupancy\": To show the true probability of an attack. darker tones for higher probability.\n\n\"Farms\": Each color represents the sites that belong to a farmer. \n\nGreen patches represent the area not occupied by farmers (Forest land)
-14
+869
+15
+1637
+345
+                    Landscape visualization\n\"Quality Agro\": Tones of green to represent the quality the patch for agriculture. Ligher tones for more productive patches\n\n\"Encounters\": To show the when a human-wildlife interaction occured in the patches with agriculture production.\n\n\"Fenced patches\": To  show the state of the exclussion using blue tones. Darker for newer (that is D!=0). Lighter tones represent older or not fence at all (D=1).\n\n\"Objective probability of occupancy\": To show the true probability of an attack. darker tones for higher probability.\n\n\"Farms\": Each color represents the sites that belong to a farmer. \n\nGreen patches represent the area not occupied by farmers (Forest land)
+12
 0.0
 1
 
@@ -860,15 +846,15 @@ SWITCH
 208
 social-influence
 social-influence
-0
+1
 1
 -1000
 
 PLOT
-694
-226
-894
-376
+667
+260
+915
+410
 Patches with less quality for wildlife
 NIL
 NIL
@@ -891,7 +877,7 @@ wage
 wage
 1
 10
-1.631
+3.415
 0.001
 1
 NIL
@@ -1299,9 +1285,11 @@ NetLogo 6.0.1
     <go>go</go>
     <timeLimit steps="100"/>
     <metric>sum [domain] of patches</metric>
-    <metric>mean [income] of farmers</metric>
+    <metric>mean [tot_income] of farmers</metric>
     <metric>sum [total_attacks] of farmers</metric>
-    <metric>N / A</metric>
+    <metric>A</metric>
+    <metric>mean [p_occ] of patches with [farmer_owner &gt; 0]</metric>
+    <metric>mean [subjective-risk] of farmers</metric>
     <enumeratedValueSet variable="farm-size">
       <value value="32"/>
     </enumeratedValueSet>
@@ -1459,7 +1447,7 @@ NetLogo 6.0.1
     <go>go</go>
     <timeLimit steps="1000"/>
     <metric>sum [domain] of patches</metric>
-    <metric>mean [income] of farmers</metric>
+    <metric>mean [tot_income] of farmers</metric>
     <metric>sum [total_attacks] of farmers</metric>
     <metric>A</metric>
     <metric>mean [p_occ] of patches with [farmer_owner &gt; 0]</metric>
@@ -1487,11 +1475,10 @@ NetLogo 6.0.1
       <value value="false"/>
       <value value="true"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="damage" first="0" step="0.1" last="2"/>
+    <steppedValueSet variable="damage" first="0" step="0.2" last="2"/>
     <enumeratedValueSet variable="N">
       <value value="50"/>
-      <value value="100"/>
-      <value value="200"/>
+      <value value="300"/>
     </enumeratedValueSet>
     <steppedValueSet variable="N_run" first="1" step="1" last="20"/>
   </experiment>
