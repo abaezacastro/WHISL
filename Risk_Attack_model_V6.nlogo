@@ -72,6 +72,7 @@ to SETUP
   set counter 0
   set delta 0.5
   set alpha 1
+  set beta 0.5
   ask patches [
     set Domain 1
     set Landtype "F"
@@ -418,6 +419,7 @@ to subjective_risk
  ;PRINT [WHO] OF my_secondD_neigh
 
  ;PRINT [WHO] OF my_FIRSTD_neigh
+
   ]
 end
 ;##################################################################################################################################################
@@ -655,7 +657,7 @@ N
 N
 10
 1000
-638.0
+461.0
 1
 1
 Animals
@@ -670,7 +672,7 @@ price
 price
 0
 3
-0.93
+0.59
 0.01
 1
 NIL
@@ -710,7 +712,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-54.0
+80.0
 1
 1
 NIL
@@ -742,7 +744,7 @@ labor_fencing
 labor_fencing
 0
 2
-0.3
+0.5
 0.1
 1
 NIL
@@ -774,8 +776,8 @@ SLIDER
 damage
 damage
 0
-2
-1.41
+1
+0.54
 0.01
 1
 NIL
@@ -823,7 +825,7 @@ average-node-degree
 average-node-degree
 0
 10
-7.0
+6.0
 1
 1
 NIL
@@ -846,7 +848,7 @@ SWITCH
 208
 social-influence
 social-influence
-1
+0
 1
 -1000
 
@@ -866,7 +868,7 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot count patches with [domain < 1 and farmer_owner > 0]"
+"default" 1.0 0 -16777216 true "" "plot sum [domain] of patches with [farmer_owner > 0]"
 
 SLIDER
 19
@@ -877,7 +879,7 @@ wage
 wage
 1
 10
-3.415
+1.0
 0.001
 1
 NIL
@@ -937,7 +939,7 @@ NIL
 
 @#$#@#$#@
 ## WHAT IS IT?
-This model simulates a group for farmers and their farmland where they produce crops. This production is reduced when they suffer attacks from a wildlife population that inhabit the landscape. Farmers can reduce the risk of being expose to these attacks by acting in the landscape, such that the suitability of patches for wildlife is reduced. We called this "fencing". Farmers must decide whether or not to invest time in creating and maintaining a fences troghout the farm, by calculating an expected utility they would obtain with and without fencing. The expectation of economic return depends on the labor invested and on their subjective perception that an attack may occur in their property. This subjective probability depends on past attacks suffered by the farmers, but also on the social network in which the farmers are embedded. By comparing the expected utility of this different actions in each patch of their farm land they decide what patches to farm and what actions to take each year.
+This model simulates a group for farmers and their farmland where they produce crops. This production is reduced when they suffer detrimental encounters with a wildlife population. Farmers can reduce the risk of encounters by excluding them. This exlussion reduces the suitability of the patches to support wildlife. Farmers must decide whether or not to invest time in producing and exlcuding acrros their farm. They calculate expected return considering the subjective risk of encounters. This subjective risk depends on past encounters and by the past encounters of other farmers that tranmit information in a social network. The model evaluate how social interactions influence the average objetive probability of encounters, the average income of farmers, and the suitability of area to support wildlife.
 ## HOW IT WORKS
 
 (what rules the agents use to create the overall behavior of the model)
@@ -1446,7 +1448,7 @@ NetLogo 6.0.1
     <setup>setup</setup>
     <go>go</go>
     <timeLimit steps="1000"/>
-    <metric>sum [domain] of patches</metric>
+    <metric>sum [domain] of patches with [farmer_owner &gt; 0]</metric>
     <metric>mean [tot_income] of farmers</metric>
     <metric>sum [total_attacks] of farmers</metric>
     <metric>A</metric>
