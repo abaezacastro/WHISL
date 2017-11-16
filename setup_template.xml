@@ -12,6 +12,7 @@
     <metric>mean [p_occ] of patches with [farmer_owner &gt; 0]</metric>
     <metric>mean [subjective-risk] of farmers</metric>
     <enumeratedValueSet variable="farm-size">
+      <value value="30"/>
       <value value="100"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="distance-btw-households">
@@ -30,13 +31,13 @@
       <value value="false"/>
       <value value="true"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="damage" first="0" step="0.1" last="1"/>
+    <steppedValueSet variable="damage" first="0" step="0.05" last="1"/>
     <enumeratedValueSet variable="labor_fencing">
       <value value="0.5"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="N">
       <value value="50"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="N_run" first="1" step="1" last="10"/>
+    <steppedValueSet variable="N_run" first="1" step="1" last="20"/>
   </experiment>
 </experiments>
