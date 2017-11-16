@@ -6,6 +6,8 @@
 #SBATCH --array=1-{jobs}
 #SBATCH -p {queue}
 #SBATCH -t 12:00:00
+#SBATCH --mail-type=END
+#SBATCH --mail-user=andres.baeza@gmail.com
 ulimit -v unlimited
 ulimit -s unlimited
 
