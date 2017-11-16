@@ -214,7 +214,7 @@ to go
 
   count-years
   subjective_risk
-  landscape_visualization
+  ;landscape_visualization
   ;ask farmers [set size s_f * Income / 10]
   clean_up
   tick
@@ -657,7 +657,7 @@ N
 N
 10
 1000
-461.0
+376.0
 1
 1
 Animals
@@ -672,7 +672,7 @@ price
 price
 0
 3
-0.59
+1.0
 0.01
 1
 NIL
@@ -687,7 +687,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 100
-95.0
+100.0
 1
 1
 farmers
@@ -712,7 +712,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-80.0
+60.0
 1
 1
 NIL
@@ -744,7 +744,7 @@ labor_fencing
 labor_fencing
 0
 2
-0.5
+0.3
 0.1
 1
 NIL
@@ -777,7 +777,7 @@ damage
 damage
 0
 1
-0.54
+0.59
 0.01
 1
 NIL
@@ -792,7 +792,7 @@ farm-size
 farm-size
 0
 100
-82.0
+50.0
 1
 1
 NIL
@@ -879,7 +879,7 @@ wage
 wage
 1
 10
-1.0
+1.688
 0.001
 1
 NIL
@@ -1469,6 +1469,9 @@ NetLogo 6.0.1
     <enumeratedValueSet variable="price">
       <value value="2.5"/>
     </enumeratedValueSet>
+    <enumeratedValueSet variable="wage">
+      <value value="2"/>
+    </enumeratedValueSet>
     <enumeratedValueSet variable="average-node-degree">
       <value value="4"/>
       <value value="8"/>
@@ -1477,7 +1480,7 @@ NetLogo 6.0.1
       <value value="false"/>
       <value value="true"/>
     </enumeratedValueSet>
-    <steppedValueSet variable="damage" first="0" step="0.2" last="2"/>
+    <steppedValueSet variable="damage" first="0" step="0.1" last="1"/>
     <enumeratedValueSet variable="N">
       <value value="50"/>
       <value value="300"/>

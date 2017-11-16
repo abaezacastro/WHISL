@@ -12,20 +12,26 @@
     <metric>mean [p_occ] of patches with [farmer_owner &gt; 0]</metric>
     <metric>mean [subjective-risk] of farmers</metric>
     <enumeratedValueSet variable="farm-size">
-      <value value="30"/>
+      <value value="50"/>
       <value value="100"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="distance-btw-households">
       <value value="20"/>
+      <value value="60"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="price">
-      <value value="2.5"/>
+      <value value="1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="wage">
+      <value value="1.5"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="Number-of-Farmers">
+      <value value="30"/>
       <value value="100"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="average-node-degree">
       <value value="4"/>
+      <value value="6"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="social-influence">
       <value value="false"/>
@@ -33,10 +39,11 @@
     </enumeratedValueSet>
     <steppedValueSet variable="damage" first="0" step="0.05" last="1"/>
     <enumeratedValueSet variable="labor_fencing">
-      <value value="0.5"/>
+      <value value="0.3"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="N">
-      <value value="50"/>
+      <value value="100"/>
+      <value value="500"/>
     </enumeratedValueSet>
     <steppedValueSet variable="N_run" first="1" step="1" last="20"/>
   </experiment>
