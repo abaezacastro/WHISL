@@ -4,6 +4,7 @@
   <experiment name="industrial_AA" repetitions="1" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
+    <final>write-timeseries-data</final>
     <timeLimit steps="1000"/>
     <metric>sum [domain] of patches with [farmer_owner &gt; 0]</metric>
     <metric>mean [tot_income] of farmers</metric>

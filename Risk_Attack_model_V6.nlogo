@@ -38,8 +38,9 @@ farmers-own [
   total_fence
   total_attacks
   labor_available          ; labor available for farming each timestep
-  attacks_list             ;list to save past attacks for adjusting subjective risk
+  encounters_memory             ;list to save past attacks for adjusting subjective risk
   attacks_list_full        ;time series of every attack 1 if attack happened; 0 otherwise
+  fence_list_total
   count_total_attacks      ;;total number of attacks in a year
   subjective-Risk
   my_firstD_neigh
@@ -130,10 +131,11 @@ to house_location ;; houses allocated in areas with higher agro quality
     set size 2
     set Tot_Labor farm-size ;; set the available labor
     set Income 1
-    set attacks_list [0 0 0 0 0]
+    set encounters_memory [0 0 0 0 0]
     set attacks_list_full []
     set income_list (list 0 0 0 0 0)
     set income_list_full []
+    set fence_list_total []
     set count_total_attacks 0
     set total_attacks 0
     set Income_target farm-size * (price - cost_Y ) / 2
@@ -154,10 +156,11 @@ to house_location ;; houses allocated in areas with higher agro quality
     set size 2
     set Tot_Labor farm-size ;; set the available labor
     set Income 1
-    set attacks_list [0 0 0 0 0]
+    set encounters_memory [0 0 0 0 0]
     set attacks_list_full []
     set income_list (list 0 0 0 0 0)
     set income_list_full []
+    set fence_list_total []
     set count_total_attacks 0
     set total_attacks 0
     set Income_target  farm-size * (price - cost_Y ) / 2
@@ -215,6 +218,7 @@ to go
   count-years
   subjective_risk
   ;landscape_visualization
+ ;if ticks = 1000[write-timeseries-data]
   ;ask farmers [set size s_f * Income / 10]
   clean_up
   tick
@@ -337,10 +341,10 @@ to attacks
 
       set N_attacks_here ifelse-value (p_occ > random-float 1) [1] [0]
     ]
-    ;set attacks_list replace-item counter attacks_list (sum [N_attacks_here] of farm) ;
-    let n_list but-first attacks_list
+    ;set encounters_memory replace-item counter encounters_memory (sum [N_attacks_here] of farm) ;
+    let n_list but-first encounters_memory
     ;print n_list
-    set attacks_list lput sum [N_attacks_here] of farm n_list
+    set encounters_memory lput sum [N_attacks_here] of farm n_list
     set attacks_list_full lput (sum [N_attacks_here] of farm) attacks_list_full
     set count_total_attacks (sum [N_attacks_here] of farm)
     if ticks > 900[
@@ -358,6 +362,7 @@ to clean_up
 
     ask farmers [
            set total_fence total_fence + sum [domain] of farm
+           set fence_list_total lput sum [domain] of farm fence_list_total
            set count_total_attacks 0
 
       ask farm [
@@ -385,12 +390,12 @@ to subjective_risk
     let dd map [ ?1 -> delta ^ (5 - ?1) ][1 2 3 4 5]
 
     if-else social-influence = TRUE [
-      ;let attacks_neigh ifelse-value (any? my-links) [map [ round mean [item ? attacks_list] of farmers with [link-neighbor? myself = TRUE]][0 1 2 3 4]][(list 0 0 0 0 0)]
+      ;let attacks_neigh ifelse-value (any? my-links) [map [ round mean [item ? encounters_memory] of farmers with [link-neighbor? myself = TRUE]][0 1 2 3 4]][(list 0 0 0 0 0)]
 
-      let fdf map [ ?1 -> sum [item ?1 attacks_list] of my_FIRSTD_neigh ][0 1 2 3 4]
-      let sdn (map [ ?1 -> sum [item ?1 attacks_list] of my_secondD_neigh ][0 1 2 3 4])
+      let fdf map [ ?1 -> sum [item ?1 encounters_memory] of my_FIRSTD_neigh ][0 1 2 3 4]
+      let sdn (map [ ?1 -> sum [item ?1 encounters_memory] of my_secondD_neigh ][0 1 2 3 4])
 
-      let attacks_neigh (map [ [?1 ?2 ?3] -> 0.75 * ?1 + (0.25 * ?2) + ?3 ] fdf sdn attacks_list)
+      let attacks_neigh (map [ [?1 ?2 ?3] -> 0.75 * ?1 + (0.25 * ?2) + ?3 ] fdf sdn encounters_memory)
 
       set s sum (map * dd attacks_neigh)
       let w_t []
@@ -402,9 +407,9 @@ to subjective_risk
     ]
 
     [ ;no social influence
-      set s sum (map * dd attacks_list)
+      set s sum (map * dd encounters_memory)
       let w_t []
-      (foreach attacks_list dd
+      (foreach encounters_memory dd
         [ [?1 ?2] ->
           ifelse (?1 > 0) [set w_t lput (?1 * ?2) w_t][set w_t lput ?2 w_t]
         ])
@@ -559,19 +564,24 @@ end
 to write-timeseries-data
     let ppcsv []
     let ICcsv []
+    let Dcsv []
     foreach sort-on [who] farmers[ ?1 ->
       ask ?1[
-        set attacks_list_full lput who attacks_list_full
-        set income_list_full lput who income_list_full
-        set ppcsv lput attacks_list_full ppcsv
-        set ICcsv lput income_list_full ICcsv
-      ]
+      set attacks_list_full fput pycor attacks_list_full
+      set attacks_list_full fput pxcor attacks_list_full
+      set income_list_full  fput pycor income_list_full
+      set income_list_full  fput pxcor income_list_full
+      set fence_list_total fput pycor fence_list_total
+      set fence_list_total fput pxcor fence_list_total
+      set ppcsv lput attacks_list_full ppcsv
+      set ICcsv lput income_list_full ICcsv
+      set Dcsv lput fence_list_total Dcsv
+    ]
     ]
 
-
-    csv:to-file (word  "TS_attacks" "-" (word N_run "-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word (ifelse-value (social-influence = TRUE)[1][0]) ".csv")))))) ppcsv
-    csv:to-file (word  "TS_income"  "-" (word N_run "-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word (ifelse-value (social-influence = TRUE)[1][0]) ".csv")))))) ICcsv
-
+    csv:to-file (word "TS_attacks" "-" (word N_run "-" (word farm-size "-" (word N "-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word (ifelse-value (social-influence = TRUE)[1][0]) ".csv")))))))) ppcsv
+    csv:to-file (word "TS_income"  "-" (word N_run "-" (word farm-size "-" (word N "-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word (ifelse-value (social-influence = TRUE)[1][0]) ".csv")))))))) ICcsv
+    csv:to-file (word "TS_suitability"  "-" (word N_run "-" (word farm-size "-" (word N "-" (word distance-btw-households "-" (word average-node-degree "-" (word damage "-" (word (ifelse-value (social-influence = TRUE)[1][0]) ".csv")))))))) Dcsv
 end
 
 ;##################################################################################################################################################
@@ -601,8 +611,8 @@ GRAPHICS-WINDOW
 1
 1
 0
-1
-1
+0
+0
 1
 0
 100
@@ -657,7 +667,7 @@ N
 N
 10
 1000
-376.0
+500.0
 1
 1
 Animals
@@ -672,7 +682,7 @@ price
 price
 0
 3
-1.0
+1.4
 0.01
 1
 NIL
@@ -687,7 +697,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 100
-100.0
+85.0
 1
 1
 farmers
@@ -701,7 +711,7 @@ CHOOSER
 Color_Landscape
 Color_Landscape
 "Quality Agro" "Quality wildlife" "Attacks" "Fenced patches" "objective probability of occupancy" "farms"
-3
+2
 
 SLIDER
 13
@@ -712,7 +722,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-60.0
+25.0
 1
 1
 NIL
@@ -777,7 +787,7 @@ damage
 damage
 0
 1
-0.59
+0.7
 0.01
 1
 NIL
@@ -792,7 +802,7 @@ farm-size
 farm-size
 0
 100
-50.0
+85.0
 1
 1
 NIL
@@ -825,7 +835,7 @@ average-node-degree
 average-node-degree
 0
 10
-6.0
+4.0
 1
 1
 NIL
@@ -879,7 +889,7 @@ wage
 wage
 1
 10
-1.688
+2.0
 0.001
 1
 NIL
@@ -1447,6 +1457,7 @@ NetLogo 6.0.1
   <experiment name="Industrial_AA" repetitions="1" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
+    <final>write-timeseries-data</final>
     <timeLimit steps="1000"/>
     <metric>sum [domain] of patches with [farmer_owner &gt; 0]</metric>
     <metric>mean [tot_income] of farmers</metric>
