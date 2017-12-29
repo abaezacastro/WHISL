@@ -7,11 +7,10 @@ Globals [
   new_ff                   ; auxiliar variable to define new farmers (used in setup the houses)
   cost_f                   ; cost of fencing a site [$]
   m                        ; time of fencing a site [time]
-
+max_labor
 ;;subjective risk
   alpha                    ;Dynamic Subjective Risk Beliefs parameter
-  beta                     ;Dynamic Subjective Risk Beliefs parameter
-  delta                    ;Dynamic Subjective Risk Beliefs parameter
+  beta                     ;Dynamic Subjective Risk Beliefs parameter                    ;Dynamic Subjective Risk Beliefs parameter
   s
 ;;reporters
 tot_cost_production
@@ -20,6 +19,7 @@ tot_damage
 
 ;;Auxiliar
 counter
+  labor_fencing
 ]
 
 breed [farmers farmer]
@@ -69,17 +69,15 @@ to SETUP
   reset-ticks
 ;random-seed 47822
   quality_landscape        ;define quality of land
-  set cost_Y 0.5             ;need to be parametrized
+  set cost_Y operational_costs             ;need to be parametrized
   set counter 0
-  set delta 0.5
-  set alpha 1
-  set beta 0.5
+  set max_labor farm-size * labor_PP
   ask patches [
     set Domain 1
     set Landtype "F"
     set decision_fencing "NF"
     set farmer_owner 0
-    set labor_AGRO 1
+    set labor_AGRO labor_PP
   ]
   house_location
   define_farms
@@ -93,27 +91,24 @@ to SETUP
   landscape_visualization
 end
 
-
-
 to quality_landscape        ;here we define the quality of the patch for agriculture
  if landscape_scenario = 1[
       ask patches [
-        set Yield_Q 1 + random 9 ;1 + random pxcor
+        set Yield_Q 1 + random-normal ave_yield_ppatch  sqrt ave_yield_ppatch
         set Quality  random-float 1;(max-pxcor - pxcor) / max-pxcor
-
       ]
  ]
 
 if landscape_scenario = 2[
       ask patches [
-        set Yield_Q 5 ;1 + random pxcor
+        set Yield_Q ave_yield_ppatch ;1 + random pxcor
         set Quality  0.5;(max-pxcor - pxcor) / max-pxcor
 
       ]
 ]
 if landscape_scenario = 3[
             ask patches [
-        set Yield_Q 5 * (max-pxcor - pxcor) / max-pxcor
+        set Yield_Q ave_yield_ppatch * (max-pxcor - pxcor) / max-pxcor
         set Quality  pxcor / max-pxcor
       ]
 ]
@@ -163,7 +158,7 @@ to house_location ;; houses allocated in areas with higher agro quality
     set fence_list_total []
     set count_total_attacks 0
     set total_attacks 0
-    set Income_target  farm-size * (price - cost_Y ) / 2
+    set Income_target  farm-size * (price - cost_Y)
     set labor_available Tot_Labor
   ]
     set i i + 1
@@ -205,7 +200,7 @@ end
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to go
 
-  update_target
+  update_variables
   define_pooc
   define_availableLabor
   define_EU
@@ -217,7 +212,7 @@ to go
 
   count-years
   subjective_risk
-  ;landscape_visualization
+  landscape_visualization
  ;if ticks = 1000[write-timeseries-data]
   ;ask farmers [set size s_f * Income / 10]
   clean_up
@@ -227,24 +222,34 @@ end
 to define_pooc  ;change to gamma distribution
   set A sum [Domain] of patches
   ask patches [
-    set p_occ ( N / A ) * (sum [Quality * Domain] of neighbors + (Quality * Domain)) / 9
+    set p_occ ( N / A ) * (Quality * Domain) ;(sum [Quality * Domain] of neighbors + )/ 9
   ]
 end
 
-to update_target
-  ask farmers [set Income_target mean income_list ]
+to update_variables
+;  ask farmers [set Income_target mean income_list ]
+  ask farmers [set Income_target mean [income] of farmers]
+  set cost_Y operational_costs             ;need to be parametrized
+  ;quality_landscape
 end
 
 to define_availableLabor
   ask farmers [
+    print Tot_Labor
+    if-else ticks = 1 [
+      set income_past 0
+      set labor_available 100][
     ifelse income_past  > Income_target [
-      set Tot_Labor labor_available - (income_past - Income_target) / wage
-      if Tot_Labor < 0 [set Tot_Labor 1]
+      set Tot_Labor labor_available - ((abs (income_past - Income_target)) / wage)
+      if Tot_Labor < 1 [set Tot_Labor 1]
     ][
-      set Tot_Labor  labor_available + ( Income_target - income_past )/ wage
+      set Tot_Labor  labor_available + ((abs (Income_target - income_past)) / wage)
+      if Tot_Labor > max_labor [set Tot_labor max_labor]
     ]
 
     set labor_available Tot_Labor
+    ]
+  print (list  labor_available ((abs (income_past - Income_target)) / wage))
   ]
 end
 
@@ -253,7 +258,7 @@ end
 to define_EU
   ask farmers [
     ask farm [
-
+      set labor_fencing labor_ratio * labor_AGRO
       set EU_NF [subjective-risk] of myself * (((price * Yield_Q * (1 - damage) - Cost_Y) / labor_AGRO)) + (1 - [subjective-risk] of myself) * (((price * Yield_Q - Cost_Y) / labor_AGRO))                     ; expected utility without a fence
       set EU_WF ((price * Yield_Q - Cost_Y) / (labor_AGRO + labor_fencing))                                                                                                          ; expected utility with a fence
       set EU_WF_maint [subjective-risk] of myself * ((price * Yield_Q * (1 - damage) - Cost_Y) / (labor_AGRO + Domain * labor_fencing)) + (1 - [subjective-risk] of myself) * ((price * Yield_Q - Cost_Y) / (labor_AGRO + Domain * labor_fencing))   ; expected utility with a fence that needs to be maintained
@@ -329,8 +334,8 @@ to calculate_income
     let agro-yield sum [Yield_Q * (1 - damage)] of farmed_patches with [N_attacks_here > 0] + sum [Yield_Q] of farmed_patches with [N_attacks_here = 0]
     set Income price * agro-yield - cost_Y * count farmed_patches
     let ilau (but-first income_list)
-    set income_list lput Income ilau
-    set income_list_full lput Income income_list_full
+    set income_list lput floor Income ilau
+    set income_list_full lput floor Income income_list_full
     if ticks > 900 [set tot_income tot_income + Income]
   ]
 end
@@ -339,7 +344,7 @@ to attacks
   ask farmers [
     ask farmed_patches [                   ;;an attack can happen in patches inside the farm used for production
 
-      set N_attacks_here ifelse-value (p_occ > random-float 1) [1] [0]
+      set N_attacks_here random-poisson p_occ
     ]
     ;set encounters_memory replace-item counter encounters_memory (sum [N_attacks_here] of farm) ;
     let n_list but-first encounters_memory
@@ -375,8 +380,8 @@ to clean_up
 
 
 to fence_decay   ;; face that are not maitained
-ask patches with [domain < 1] [
-  set domain domain + 0.1
+  ask patches with [domain < 1][
+  set domain domain + 0.3
   if domain > 1 [set domain 1]
 ]
 end
@@ -397,26 +402,21 @@ to subjective_risk
 
       let attacks_neigh (map [ [?1 ?2 ?3] -> 0.75 * ?1 + (0.25 * ?2) + ?3 ] fdf sdn encounters_memory)
 
-      set s sum (map * dd attacks_neigh)
-      let w_t []
-      (foreach attacks_neigh dd
-        [ [?1 ?2] ->
-          ifelse (?1 > 0) [set w_t lput (?1 * ?2) w_t][set w_t lput ?2 w_t]
-        ])
-      set subjective-risk (s + alpha) / (sum w_t + alpha + beta)
+      set s (mean (map * dd attacks_neigh)) / farm-size
+      let w_t s
+      set subjective-risk (exp (- w_t)) * ((w_t ^ 2) / (1 * 2))
+
+
     ]
 
     [ ;no social influence
-      set s sum (map * dd encounters_memory)
-      let w_t []
-      (foreach encounters_memory dd
-        [ [?1 ?2] ->
-          ifelse (?1 > 0) [set w_t lput (?1 * ?2) w_t][set w_t lput ?2 w_t]
-        ])
-
-      set subjective-risk (s + alpha) / (sum w_t + alpha + beta)
+      set s (mean (map * dd encounters_memory)) / farm-size
+      let w_t s
+      ;set subjective-risk (s + alpha) / (sum w_t + alpha + beta)
+      set subjective-risk (exp (- w_t)) * (w_t / 1) ;probability of one event
+;      set subjective-risk (exp (- w_t)) * ((w_t ^ 2) / (1 * 2)) ;probability of two event
     ;print (s / (sum w_t))
-
+      print subjective-risk
     ]
 
 
@@ -625,9 +625,9 @@ ticks
 30.0
 
 BUTTON
-23
+22
 205
-87
+86
 239
 NIL
 setup
@@ -667,7 +667,7 @@ N
 N
 10
 1000
-500.0
+576.0
 1
 1
 Animals
@@ -680,10 +680,10 @@ SLIDER
 366
 price
 price
-0
-3
-1.4
-0.01
+10
+50
+21.0
+1
 1
 NIL
 HORIZONTAL
@@ -697,7 +697,7 @@ Number-of-Farmers
 Number-of-Farmers
 1
 100
-85.0
+80.0
 1
 1
 farmers
@@ -711,7 +711,7 @@ CHOOSER
 Color_Landscape
 Color_Landscape
 "Quality Agro" "Quality wildlife" "Attacks" "Fenced patches" "objective probability of occupancy" "farms"
-2
+3
 
 SLIDER
 13
@@ -722,7 +722,7 @@ distance-btw-households
 distance-btw-households
 3
 100
-25.0
+60.0
 1
 1
 NIL
@@ -750,21 +750,21 @@ SLIDER
 403
 191
 436
-labor_fencing
-labor_fencing
+labor_ratio
+labor_ratio
 0
 2
-0.3
+1.2
 0.1
 1
 NIL
 HORIZONTAL
 
 PLOT
-914
-415
-1155
-562
+910
+384
+1151
+531
 Income
 NIL
 NIL
@@ -787,7 +787,7 @@ damage
 damage
 0
 1
-0.7
+0.72
 0.01
 1
 NIL
@@ -802,17 +802,17 @@ farm-size
 farm-size
 0
 100
-85.0
+80.0
 1
 1
 NIL
 HORIZONTAL
 
 PLOT
-667
-415
-914
-565
+664
+384
+911
+534
 average p_occ
 NIL
 NIL
@@ -835,7 +835,7 @@ average-node-degree
 average-node-degree
 0
 10
-4.0
+1.0
 1
 1
 NIL
@@ -863,10 +863,10 @@ social-influence
 -1000
 
 PLOT
-667
-260
-915
-410
+664
+228
+912
+378
 Patches with less quality for wildlife
 NIL
 NIL
@@ -888,9 +888,9 @@ SLIDER
 wage
 wage
 1
-10
-2.0
-0.001
+10000
+215.0
+1
 1
 NIL
 HORIZONTAL
@@ -904,7 +904,7 @@ N_run
 N_run
 1
 10
-8.0
+4.0
 1
 1
 NIL
@@ -946,6 +946,66 @@ NIL
 NIL
 NIL
 1
+
+SLIDER
+230
+517
+402
+550
+ave_yield_ppatch
+ave_yield_ppatch
+0
+100
+24.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+230
+484
+402
+517
+operational_costs
+operational_costs
+0
+1000
+503.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+466
+479
+638
+512
+labor_PP
+labor_PP
+1
+100
+2.0
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+31
+521
+203
+554
+delta
+delta
+0
+2
+0.4
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
