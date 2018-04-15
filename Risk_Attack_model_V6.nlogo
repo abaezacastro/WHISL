@@ -534,7 +534,6 @@ to export-map
     file-write labor_fencing
     file-write ifelse-value (social-influence = TRUE)[1][0]
 
-
     foreach sort-on [who] farmers[ ?1 ->
       ask ?1
       [
@@ -558,6 +557,7 @@ to write-csv-file
     let ICcsv []
     foreach sort-on [who] farmers[ ?1 ->
       ask ?1[
+      ;save the quality of patches for wildlife overtime
         set attacks_list_full lput who attacks_list_full
         set income_list_full lput who income_list_full
         set ppcsv lput attacks_list_full ppcsv
@@ -654,7 +654,7 @@ N
 N
 10
 1000
-357.0
+376.0
 1
 1
 Animals
@@ -774,7 +774,7 @@ damage
 damage
 0
 1
-0.4
+0.57
 0.01
 1
 NIL
@@ -872,7 +872,7 @@ PLOT
 226
 894
 376
-APatches with less quality for wildlife
+Patches with less quality for wildlife
 NIL
 NIL
 0.0
@@ -923,7 +923,7 @@ CHOOSER
 landscape_scenario
 landscape_scenario
 1 2 3
-0
+2
 
 CHOOSER
 685
@@ -1300,6 +1300,7 @@ NetLogo 6.0.1
   <experiment name="vary_demage" repetitions="1" runMetricsEveryStep="false">
     <setup>setup</setup>
     <go>go</go>
+    <final>export-map</final>
     <timeLimit steps="100"/>
     <metric>sum [domain] of patches</metric>
     <metric>mean [income] of farmers</metric>
