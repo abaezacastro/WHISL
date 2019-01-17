@@ -1,4 +1,4 @@
-# Wildlife-Human interactions in Shared Landscape (WHISL)
+# Wildlife-Human Interactions in Shared Landscape (WHISL)
 
 This model simulates a group of farmers that have encounters with individuals of a wildlife population. The model also simulates the movement of the individual of the wildlife population. Each farmer owns a set of patches that represent they farmland. A farm is a group of patches or cells. Each farmer must decide what cells inside their farm they will use to produce agriculture. The farmer must also decide if it will protect the cells from the individuals of the wildlife population entering their farm. We call this action "to fence". Each time that a cell is fenced, the changes of the individual to move to that cell is reduced. Each encounter reduces the productivity of the agriculture in a pach impacted. Farmers therefore can reduce the risk of encounters by excluding them by fencing. 
 
